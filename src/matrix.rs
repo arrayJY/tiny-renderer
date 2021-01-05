@@ -98,4 +98,33 @@ macro_rules! matrix {
     ($type: ty; $row: ty, $col: ty ) => {
         Matrix::<$type, $row, $col>::new();
     };
+    ($type: ty; $length: ty; $($val: expr), * ) => {
+        {
+            let mut m = Matrix::<$type, $length, $length>::new();
+            let length = m.rows();
+            let mut iter = (0..length).flat_map(move |a| (0..length).map(move |b| (a, b)));
+            $(
+                {
+                    let (row, col) = iter.next().unwrap();
+                    m.set(row, col, $val).unwrap();
+                }
+            )*
+            m
+        }
+    };
+    ($type: ty; $row: ty, $col: ty; $($val: expr), * ) => {
+        {
+            let mut m = Matrix::<$type, $row, $col>::new();
+            let rows = m.rows();
+            let cols = m.cols();
+            let mut iter = (0..rows).flat_map(move |a| (0..cols).map(move |b| (a, b)));
+            $(
+                {
+                    let (row, col) = iter.next().unwrap();
+                    m.set(row, col, $val).unwrap();
+                }
+            )*
+            m
+        }
+    };
 }
