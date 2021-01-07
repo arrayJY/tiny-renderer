@@ -1,3 +1,4 @@
+pub mod ops;
 use std::usize;
 
 use generic_array::typenum::Unsigned;
