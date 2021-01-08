@@ -1,6 +1,6 @@
 use super::Matrix;
 use generic_array::{ArrayLength, GenericArray};
-use std::ops::{Add, Sub};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 macro_rules! impl_basic_ops {
     ($trait: ident, $func: ident, $op: tt) => {
@@ -55,3 +55,26 @@ macro_rules! impl_basic_ops {
 
 impl_basic_ops!(Add, add, +);
 impl_basic_ops!(Sub, sub, -);
+
+macro_rules! impl_basic_assign_ops {
+    ($trait: ident, $func: ident, $op: tt) => {
+        impl<T, Row, Col> $trait for Matrix<T, Row, Col>
+        where
+            T: Default + Copy + $trait,
+            Row: ArrayLength<GenericArray<T, Col>>,
+            Col: ArrayLength<T>,
+        {
+            fn $func(&mut self, rhs: Matrix<T, Row, Col>) {
+                assert!((self.rows(), self.cols()) == (rhs.rows(), rhs.cols()));
+                let rows = self.rows();
+                let cols = self.cols();
+                (0..rows)
+                    .flat_map(move |a| (0..cols).map(move |b| (a, b)))
+                    .for_each(|(row, col)| self.data[row][col] $op rhs.data[row][col]);
+            }
+        }
+    };
+}
+
+impl_basic_assign_ops!(AddAssign, add_assign, +=);
+impl_basic_assign_ops!(SubAssign, sub_assign, -=);
