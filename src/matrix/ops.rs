@@ -18,7 +18,7 @@ macro_rules! impl_basic_ops {
                         m.set(
                             row,
                             col,
-                            *self.get(row, col).unwrap() $op *rhs.get(row, col).unwrap()
+                            self[row][col] $op rhs[row][col]
                         )
                         .unwrap();
                     }
@@ -42,7 +42,7 @@ macro_rules! impl_basic_ops {
                         m.set(
                             row,
                             col,
-                            *self.get(row, col).unwrap() $op *rhs.get(row, col).unwrap()
+                            self[row][col] $op rhs[row][col]
                         )
                         .unwrap();
                     }
