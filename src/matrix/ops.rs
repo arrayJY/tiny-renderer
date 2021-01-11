@@ -1,6 +1,6 @@
 use super::Matrix;
 use generic_array::{ArrayLength, GenericArray};
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Index, Sub, SubAssign};
 
 macro_rules! impl_basic_ops {
     ($trait: ident, $func: ident, $op: tt) => {
@@ -78,3 +78,15 @@ macro_rules! impl_basic_assign_ops {
 
 impl_basic_assign_ops!(AddAssign, add_assign, +=);
 impl_basic_assign_ops!(SubAssign, sub_assign, -=);
+
+impl<T, Row, Col> Index<usize> for Matrix<T, Row, Col>
+where
+    T: Default + Copy,
+    Row: ArrayLength<GenericArray<T, Col>>,
+    Col: ArrayLength<T>,
+{
+    type Output = GenericArray<T, Col>;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.data[index]
+    }
+}
