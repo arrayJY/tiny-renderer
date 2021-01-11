@@ -1,26 +1,28 @@
 pub mod ops;
-use std::usize;
-
-use generic_array::typenum::Unsigned;
+use generic_array::typenum::{Prod, Unsigned};
 use generic_array::typenum::{U1, U2, U3, U4};
 use generic_array::{ArrayLength, GenericArray};
+use std::ops::Mul;
+use std::usize;
 
 #[derive(Debug)]
 pub struct Matrix<T, Row, Col>
 where
     T: Default,
-    Row: ArrayLength<GenericArray<T, Col>>,
-    Col: ArrayLength<T>,
+    Row: Unsigned + Mul<Col>,
+    Col: Unsigned,
+    <Row as Mul<Col>>::Output: ArrayLength<T>,
 {
-    data: GenericArray<GenericArray<T, Col>, Row>,
+    data: GenericArray<T, Prod<Row, Col>>,
 }
 
 #[allow(dead_code)]
 impl<T, Row, Col> Matrix<T, Row, Col>
 where
     T: Default,
-    Row: ArrayLength<GenericArray<T, Col>>,
-    Col: ArrayLength<T>,
+    Row: Unsigned + Mul<Col>,
+    Col: Unsigned,
+    <Row as Mul<Col>>::Output: ArrayLength<T>,
 {
     pub fn new() -> Matrix<T, Row, Col> {
         Matrix::<T, Row, Col> {
@@ -38,7 +40,7 @@ where
 
     pub fn get(&self, row: usize, col: usize) -> Option<&T> {
         if row < self.rows() && col < self.cols() {
-            Some(&self.data[row][col])
+            Some(&self[row][col])
         } else {
             None
         }
@@ -46,7 +48,7 @@ where
 
     pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&T> {
         if row < self.rows() && col < self.cols() {
-            Some(&self.data[row][col])
+            Some(&self[row][col])
         } else {
             None
         }
@@ -54,7 +56,7 @@ where
 
     pub fn set(&mut self, row: usize, col: usize, value: T) -> Result<(), ()> {
         if row < self.rows() && col < self.cols() {
-            self.data[row][col] = value;
+            self[row][col] = value;
             Ok(())
         } else {
             Err(())
@@ -107,7 +109,7 @@ macro_rules! matrix {
             $(
                 {
                     let (row, col) = iter.next().unwrap();
-                    m.set(row, col, $val).unwrap();
+                    m[row][col] = $val;
                 }
             )*
             m
@@ -122,7 +124,7 @@ macro_rules! matrix {
             $(
                 {
                     let (row, col) = iter.next().unwrap();
-                    m.set(row, col, $val).unwrap();
+                    m[row][col] = $val;
                 }
             )*
             m
