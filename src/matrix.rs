@@ -65,7 +65,7 @@ where
 
     pub fn get_col(&self, col: usize) -> Option<impl Iterator<Item = &T>> {
         if col < self.cols() {
-            Some((0..self.rows()).map(move |row| self.get(row, col).unwrap()))
+            Some((0..self.rows()).map(move |row| &self[row][col]))
         } else {
             None
         }
@@ -73,7 +73,7 @@ where
 
     pub fn get_row(&self, row: usize) -> Option<impl Iterator<Item = &T>> {
         if row < self.rows() {
-            Some((0..self.cols()).map(move |col| self.get(row, col).unwrap()))
+            Some((0..self.cols()).map(move |col| &self[row][col]))
         } else {
             None
         }
