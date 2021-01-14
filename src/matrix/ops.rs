@@ -12,7 +12,7 @@ macro_rules! impl_basic_ops {
             T: Default + Copy + $trait<Output = T>,
             Row: Unsigned + Mul<Col>,
             Col: Unsigned,
-            <Row as Mul<Col>>::Output: ArrayLength<T>
+            Prod<Row, Col>: ArrayLength<T>,
         {
             type Output = Matrix<T, Row, Col>;
             fn $func(self, rhs: Matrix<T, Row, Col>) -> Self::Output {
@@ -32,7 +32,7 @@ macro_rules! impl_basic_ops {
             T: Default + Copy + $trait<Output = T>,
             Row: Unsigned + Mul<Col>,
             Col: Unsigned,
-            <Row as Mul<Col>>::Output: ArrayLength<T>
+            Prod<Row, Col>: ArrayLength<T>,
         {
             type Output = Matrix<T, Row, Col>;
             fn $func(self, rhs: &'a Matrix<T, Row, Col>) -> Self::Output {
@@ -58,7 +58,7 @@ macro_rules! impl_basic_assign_ops {
             T: Default + Copy + $trait,
             Row: Unsigned + Mul<Col>,
             Col: Unsigned,
-            <Row as Mul<Col>>::Output: ArrayLength<T>
+            Prod<Row, Col>: ArrayLength<T>,
         {
             fn $func(&mut self, rhs: Matrix<T, Row, Col>) {
                 assert!((self.rows(), self.cols()) == (rhs.rows(), rhs.cols()));
@@ -135,7 +135,7 @@ where
     T: Default,
     Row: Unsigned + Mul<Col>,
     Col: Unsigned,
-    <Row as Mul<Col>>::Output: ArrayLength<T>,
+    Prod<Row, Col>: ArrayLength<T>,
 {
     type Output = [T];
     fn index(&self, index: usize) -> &Self::Output {
@@ -149,7 +149,7 @@ where
     T: Default,
     Row: Unsigned + Mul<Col>,
     Col: Unsigned,
-    <Row as Mul<Col>>::Output: ArrayLength<T>,
+    Prod<Row, Col>: ArrayLength<T>,
 {
     fn index_mut(&mut self, index: usize) -> &mut [T] {
         let cols = self.cols();

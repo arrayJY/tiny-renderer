@@ -11,7 +11,7 @@ where
     T: Default,
     Row: Unsigned + Mul<Col>,
     Col: Unsigned,
-    <Row as Mul<Col>>::Output: ArrayLength<T>,
+    Prod<Row, Col>: ArrayLength<T>,
 {
     data: GenericArray<T, Prod<Row, Col>>,
 }
@@ -22,7 +22,7 @@ where
     T: Default,
     Row: Unsigned + Mul<Col>,
     Col: Unsigned,
-    <Row as Mul<Col>>::Output: ArrayLength<T>,
+    Prod<Row, Col>: ArrayLength<T>,
 {
     pub fn new() -> Matrix<T, Row, Col> {
         Matrix::<T, Row, Col> {
