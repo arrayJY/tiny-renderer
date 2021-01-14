@@ -2,6 +2,7 @@ pub mod ops;
 use generic_array::typenum::{Prod, Unsigned};
 use generic_array::typenum::{U1, U2, U3, U4};
 use generic_array::{ArrayLength, GenericArray};
+use std::iter::Sum;
 use std::ops::Mul;
 use std::usize;
 
@@ -77,6 +78,35 @@ where
         } else {
             None
         }
+    }
+}
+
+impl<T, Row, Col> Matrix<T, Row, Col>
+where
+    T: Default + Copy + Mul<Output = T> + Sum,
+    Row: Unsigned + Mul<Col>,
+    Col: Unsigned,
+    Prod<Row, Col>: ArrayLength<T>,
+{
+    pub fn dot(&self, rhs: &Matrix<T, Row, Col>) -> T {
+        let r: T = self
+            .data
+            .iter()
+            .zip(rhs.data.iter())
+            .map(|(&a, &b)| a * b)
+            .sum();
+        r
+    }
+
+    pub fn cross<Col2>(&self, rhs: &Matrix<T, Col, Col2>) -> Matrix<T, Row, Col2>
+    where
+        Row: Mul<Col2>,
+        Col: Mul<Col2>,
+        Col2: Unsigned,
+        Prod<Col, Col2>: ArrayLength<T>,
+        Prod<Row, Col2>: ArrayLength<T>,
+    {
+        self * rhs
     }
 }
 
