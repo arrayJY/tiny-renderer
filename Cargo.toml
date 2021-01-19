@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 typenum = "1.12"
 generic-array  = "0.14"
+winit = "0.24.0"
