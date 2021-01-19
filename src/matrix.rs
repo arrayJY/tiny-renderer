@@ -79,6 +79,29 @@ where
             None
         }
     }
+
+    // Return the transposed matrix.
+    // It won't change self.
+    pub fn transpose(&self) -> Matrix<T, Col, Row>
+    where
+        T: Copy,
+        Col: Mul<Row>,
+        Prod<Col, Row>: ArrayLength<T>,
+    {
+        let cols = self.cols();
+        let data = (0..cols)
+            .map(move |col| self.get_col(col).unwrap())
+            .flat_map(|v| v);
+        let mut m = Matrix::<T, Col, Row>::new();
+
+        let rows = m.rows();
+        let cols = m.cols();
+        let iter = (0..rows).flat_map(move |a| (0..cols).map(move |b| (a, b)));
+        for ((row, col), value) in iter.zip(data) {
+            m[row][col] = *value;
+        }
+        m
+    }
 }
 
 impl<T, Row, Col> Matrix<T, Row, Col>
