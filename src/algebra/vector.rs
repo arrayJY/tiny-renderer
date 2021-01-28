@@ -1,4 +1,4 @@
-use crate::matrix::Matrix;
+use super::matrix::Matrix;
 use typenum::{U1, U2, U3, U4};
 
 #[allow(dead_code)]
