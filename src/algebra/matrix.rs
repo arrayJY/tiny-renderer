@@ -5,9 +5,9 @@ use generic_array::{ArrayLength, GenericArray};
 use std::iter::Sum;
 use std::ops::{Mul, Sub};
 use std::usize;
-use typenum::IsEqual;
+use typenum::{IsEqual, True};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Matrix<T, Row, Col>
 where
     T: Default,
@@ -126,8 +126,8 @@ where
     pub fn cross(&self, rhs: &Self) -> Self
     where
         T: Sub<Output = T>,
-        Row: IsEqual<U3>,
-        Col: IsEqual<U1>,
+        Row: IsEqual<U3, Output = True>,
+        Col: IsEqual<U1, Output = True>,
     {
         let mut m = Self::new();
         m[0][0] = self[1][0] * rhs[2][0] - self[2][0] * rhs[1][0];
