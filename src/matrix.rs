@@ -3,8 +3,9 @@ use generic_array::typenum::{Prod, Unsigned};
 use generic_array::typenum::{U1, U2, U3, U4};
 use generic_array::{ArrayLength, GenericArray};
 use std::iter::Sum;
-use std::ops::Mul;
+use std::ops::{Mul, Sub};
 use std::usize;
+use typenum::IsEqual;
 
 #[derive(Debug)]
 pub struct Matrix<T, Row, Col>
@@ -121,15 +122,18 @@ where
         r
     }
 
-    pub fn cross<Col2>(&self, rhs: &Matrix<T, Col, Col2>) -> Matrix<T, Row, Col2>
+    //only vector3 has cross product meaning.
+    pub fn cross(&self, rhs: &Self) -> Self
     where
-        Row: Mul<Col2>,
-        Col: Mul<Col2>,
-        Col2: Unsigned,
-        Prod<Col, Col2>: ArrayLength<T>,
-        Prod<Row, Col2>: ArrayLength<T>,
+        T: Sub<Output = T>,
+        Row: IsEqual<U3>,
+        Col: IsEqual<U1>,
     {
-        self * rhs
+        let mut m = Self::new();
+        m[0][0] = self[1][0] * rhs[2][0] - self[2][0] * rhs[1][0];
+        m[1][0] = self[2][0] * rhs[0][0] - self[0][0] * rhs[2][0];
+        m[2][0] = self[0][0] * rhs[1][0] - self[1][0] * rhs[0][0];
+        m
     }
 }
 
