@@ -17,7 +17,7 @@ def_dimension_vector!(Vector3, U3);
 def_dimension_vector!(Vector4, U4);
 
 #[allow(dead_code)]
-pub type Vectorf<N> = Vector<f64, N>;
+pub type Vectorf<N> = Vector<f32, N>;
 #[allow(dead_code)]
 pub type Vector1f = Vectorf<U1>;
 #[allow(dead_code)]
