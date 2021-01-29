@@ -1,4 +1,5 @@
 mod algebra;
+mod pipeline;
 
 #[cfg(test)]
 mod test;
