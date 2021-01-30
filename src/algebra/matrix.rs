@@ -1,4 +1,4 @@
-pub mod ops;
+mod ops;
 use generic_array::typenum::{Prod, Unsigned};
 use generic_array::typenum::{U1, U2, U3, U4};
 use generic_array::{ArrayLength, GenericArray};
@@ -150,6 +150,23 @@ def_square_matrix!(Matrix2, U2);
 def_square_matrix!(Matrix3, U3);
 def_square_matrix!(Matrix4, U4);
 
+macro_rules! def_float_matrix {
+    ($float: ty) => {
+        #[allow(dead_code)]
+        pub type Matrixf<Row, Col> = Matrix<$float, Row, Col>;
+        #[allow(dead_code)]
+        pub type Matrix1f = Matrix1<$float>;
+        #[allow(dead_code)]
+        pub type Matrix2f = Matrix2<$float>;
+        #[allow(dead_code)]
+        pub type Matrix3f = Matrix3<$float>;
+        #[allow(dead_code)]
+        pub type Matrix4f = Matrix4<$float>;
+    };
+}
+
+def_float_matrix!(f32);
+
 #[macro_export]
 macro_rules! matrix {
     ($type: ty; $length: ty) => {
@@ -186,5 +203,39 @@ macro_rules! matrix {
             )*
             m
         }
+    };
+}
+
+#[macro_export]
+macro_rules! matrixf {
+    ($dimension: ty; $($val: expr), *) => {
+        {
+            let mut m = Matrixf::<$dimension, $dimension>::new();
+            let d = m.rows();
+            let mut iter = (0..d).flat_map(move |a| (0..d).map(move |b| (a, b)));
+            $(
+                {
+                    let (row, col) = iter.next().unwrap();
+                    m[row][col] = $val;
+                }
+            )*
+            m
+       }
+    };
+
+    ($row: ty, $col: ty; $($val: expr), *) => {
+        {
+            let mut m = Matrixf::<$row, $col>::new();
+            let rows = m.rows();
+            let cols = m.cols();
+            let mut iter = (0..rows).flat_map(move |a| (0..cols).map(move |b| (a, b)));
+            $(
+                {
+                    let (row, col) = iter.next().unwrap();
+                    m[row][col] = $val;
+                }
+            )*
+            m
+       }
     };
 }
