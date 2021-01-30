@@ -5,7 +5,7 @@ use generic_array::{ArrayLength, GenericArray};
 use std::iter::Sum;
 use std::ops::{Mul, Sub};
 use std::usize;
-use typenum::{IsEqual, True};
+use typenum::{IsEqual, IsLessOrEqual, True};
 
 #[derive(Debug, PartialEq)]
 pub struct Matrix<T, Row, Col>
@@ -134,6 +134,26 @@ where
         m[1][0] = self[2][0] * rhs[0][0] - self[0][0] * rhs[2][0];
         m[2][0] = self[0][0] * rhs[1][0] - self[1][0] * rhs[0][0];
         m
+    }
+
+    pub fn from<R, C>(matrix: &Matrix<T, R, C>) -> Self
+    where
+        T: Copy,
+        R: Unsigned + Mul<C> + IsLessOrEqual<Row, Output = True>,
+        C: Unsigned + IsLessOrEqual<Col, Output = True>,
+        Prod<R, C>: ArrayLength<T>,
+    {
+        let mut m = Self::new();
+        for (row, col) in matrix.index_iter() {
+            m[row][col] = matrix[row][col];
+        }
+        m
+    }
+
+    fn index_iter(&self) -> impl Iterator<Item = (usize, usize)> {
+        let rows = self.rows();
+        let cols = self.cols();
+        (0..rows).flat_map(move |a| (0..cols).map(move |b| (a, b)))
     }
 }
 

@@ -1,7 +1,10 @@
 #[allow(unused_imports)]
-use crate::algebra::typenum::{U1,U2,U3};
+use crate::algebra::typenum::{U1, U2, U3};
 #[allow(unused_imports)]
-use crate::{algebra::matrix::Matrix, matrix};
+use crate::{
+    algebra::matrix::{Matrix, Matrixf},
+    matrix, matrixf,
+};
 #[test]
 fn matrix_index() {
     let m = matrix!(i32; U2; 1, 2, 3, 4);
@@ -48,7 +51,7 @@ fn matrix_dot() {
 fn matrix_cross() {
     let m1 = matrix!(i32; U3, U1; 1, 2, 3);
     let m2 = matrix!(i32; U3, U1; 0, 1, 2);
-    assert_eq!(matrix!(i32; U3, U1; 1, -2, 1) ,  m1.cross(&m2));
+    assert_eq!(matrix!(i32; U3, U1; 1, -2, 1), m1.cross(&m2));
 }
 
 #[test]
@@ -57,4 +60,8 @@ fn matrix_transpose() {
     assert_eq!(matrix!(i32; U1, U3; 1, 2, 3), m1.transpose());
 }
 
-
+#[test]
+fn matrix_from_small_one() {
+    let m = matrixf!(U2; 1.0, 2.0, 3.0, 4.0);
+    assert_eq!(Matrixf::<U3, U3>::from(&m), matrixf!(U3; 1.0, 2.0, 0.0, 3.0, 4.0))
+}
