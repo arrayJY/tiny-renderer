@@ -1,5 +1,6 @@
 mod ops;
 pub mod macros;
+pub mod transform;
 use generic_array::typenum::{Prod, Unsigned};
 use generic_array::typenum::{U1, U2, U3, U4};
 use generic_array::{ArrayLength, GenericArray};
