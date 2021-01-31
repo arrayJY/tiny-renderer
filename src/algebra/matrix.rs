@@ -1,5 +1,5 @@
-mod ops;
 pub mod macros;
+mod ops;
 pub mod transform;
 use generic_array::typenum::{Prod, Unsigned};
 use generic_array::typenum::{U1, U2, U3, U4};
@@ -188,3 +188,19 @@ macro_rules! def_float_matrix {
 }
 
 def_float_matrix!(f32);
+
+impl<Row, Col> Matrixf<Row, Col>
+where
+    Row: Unsigned + Mul<Col> + IsEqual<Col, Output = True>,
+    Col: Unsigned,
+    Prod<Row, Col>: ArrayLength<f32>,
+{
+    pub fn unit() -> Self {
+        let mut m = Self::new();
+        let d = <Row as Unsigned>::to_usize();
+        for (row, col) in (0..d).zip(0..d) {
+            m[row][col] = 1.0;
+        }
+        m
+    }
+}
