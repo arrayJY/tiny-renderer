@@ -34,7 +34,9 @@ impl Model {
                 let indices = (0..mesh.num_face_indices.len())
                     .zip(mesh.num_face_indices.iter())
                     .map(|(start, num)| {
-                        let indice: [u32; 3] = mesh.indices[start..start + *num as usize].try_into().unwrap();
+                        let indice: [u32; 3] = mesh.indices[start..start + *num as usize]
+                            .try_into()
+                            .unwrap();
                         indice
                     })
                     .collect::<Vec<_>>();
@@ -54,8 +56,14 @@ impl Model {
     pub fn indices(&self) -> &Vec<[u32; 3]> {
         &self.indices
     }
+    pub fn indices_mut(&mut self) -> &mut Vec<[u32; 3]> {
+        &mut self.indices
+    }
 
     pub fn vertexs(&self) -> &Vec<Vectorf<U4>> {
         &self.vertexs
+    }
+    pub fn vertexs_mut(&mut self) -> &mut Vec<Vectorf<U4>> {
+        &mut self.vertexs
     }
 }
