@@ -66,3 +66,59 @@ macro_rules! vectorf {
         }
     };
 }
+
+#[macro_export]
+macro_rules! vector1f {
+    () => {
+        Vector1f::new();
+    };
+    ($($val: expr), +) => {
+        {
+            let mut v = Vector1f::new();
+            input_matrix! (v, $($val), +);
+            v
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! vector2f {
+    () => {
+        Vector2f::new();
+    };
+    ($($val: expr), +) => {
+        {
+            let mut v = Vector2f::new();
+            input_matrix! (v, $($val), +);
+            v
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! vector3f {
+    () => {
+        Vectorrf::new();
+    };
+    ($($val: expr), +) => {
+        {
+            let mut v = Vector3f::new();
+            input_matrix! (v, $($val), +);
+            v
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! vector4f {
+    () => {
+        Vector4f::new();
+    };
+    ($($val: expr), +) => {
+        {
+            let mut v = Vector4f::new();
+            input_matrix! (v, $($val), +);
+            v
+        }
+    };
+}
