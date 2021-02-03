@@ -1,13 +1,11 @@
+use crate::{algebra::vector::Vector4f, *};
 use std::convert::TryInto;
-
-use crate::algebra::typenum::U4;
-use crate::{algebra::vector::Vectorf, vectorf};
 use tobj;
 
 #[allow(dead_code)]
 pub struct Model {
-    indices: Vec<[u32; 3]>,
-    vertexs: Vec<Vectorf<U4>>,
+    pub indices: Vec<[u32; 3]>,
+    pub vertexs: Vec<Vector4f>,
 }
 
 #[allow(dead_code)]
@@ -45,7 +43,7 @@ impl Model {
                     .map(|i| {
                         let p = &mesh.positions;
                         //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
-                        vectorf!(U4; p[i], p[i+1], p[i+2], 1.0)
+                        vector4f!(p[i], p[i + 1], p[i + 2], 1.0)
                     })
                     .collect::<Vec<_>>();
                 Model { indices, vertexs }
@@ -60,10 +58,10 @@ impl Model {
         &mut self.indices
     }
 
-    pub fn vertexs(&self) -> &Vec<Vectorf<U4>> {
+    pub fn vertexs(&self) -> &Vec<Vector4f> {
         &self.vertexs
     }
-    pub fn vertexs_mut(&mut self) -> &mut Vec<Vectorf<U4>> {
+    pub fn vertexs_mut(&mut self) -> &mut Vec<Vector4f> {
         &mut self.vertexs
     }
 }

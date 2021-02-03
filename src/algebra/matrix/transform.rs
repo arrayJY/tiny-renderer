@@ -46,10 +46,10 @@ impl Matrix4f {
         let sina = angle.sin();
         let cosa = angle.cos();
         matrix4f!(
-             cosa, sina, 0.0, 0.0,
-             sina, cosa, 0.0, 0.0,
-              0.0,  0.0, 1.0, 0.0,
-              0.0,  0.0, 0.0, 1.0
+             cosa, -sina, 0.0, 0.0,
+             sina,  cosa, 0.0, 0.0,
+              0.0,   0.0, 1.0, 0.0,
+              0.0,   0.0, 0.0, 1.0
         )
     }
 }
