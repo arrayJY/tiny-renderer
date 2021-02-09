@@ -2,7 +2,10 @@
 use crate::algebra::typenum::{U1, U2, U3, U4};
 #[allow(unused_imports)]
 use crate::{
-    algebra::matrix::{Matrix, Matrix4f, Matrixf},
+    algebra::{
+        vector::{Vector3f},
+        matrix::{Matrix, Matrix4f, Matrixf},
+    },
     *,
 };
 #[test]
@@ -67,4 +70,12 @@ fn matrix_from_small_one() {
         Matrixf::<U3, U3>::from(&m),
         matrixf!(U3; 1.0, 2.0, 0.0, 3.0, 4.0)
     )
+}
+
+
+#[test]
+fn normalize_vector() {
+    let mut v = vector3f!(0.0, 0.0, 2.0);
+    v.normalize();
+    assert_eq!(v, vector3f!(0.0, 0.0, 1.0))
 }

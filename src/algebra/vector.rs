@@ -1,9 +1,14 @@
+use std::ops::Mul;
+
 use super::matrix::Matrix;
-use typenum::{U1, U2, U3, U4};
 use crate::{input_matrix, vector4f};
+use generic_array::{ArrayLength, functional::FunctionalSequence};
+use typenum::{Prod, Unsigned, U1, U2, U3, U4};
 
 #[allow(dead_code)]
 pub type Vector<T, N> = Matrix<T, N, U1>;
+
+type VectorFloat = f32; //
 
 macro_rules! def_dimension_vector {
     ($name: ident, $dimension: ty) => {
@@ -18,7 +23,7 @@ def_dimension_vector!(Vector3, U3);
 def_dimension_vector!(Vector4, U4);
 
 #[allow(dead_code)]
-pub type Vectorf<N> = Vector<f32, N>;
+pub type Vectorf<N> = Vector<VectorFloat, N>;
 #[allow(dead_code)]
 pub type Vector1f = Vectorf<U1>;
 #[allow(dead_code)]
@@ -48,8 +53,18 @@ macro_rules! vector {
     };
 }
 
-impl<T: Default + Copy> Vector3<T>
+impl<T, N> Vector<T, N>
+where
+    T: Default,
+    N: Unsigned + Mul<U1>,
+    Prod<N, U1>: ArrayLength<T>,
 {
+    pub fn dimension(&self) -> usize {
+        <N as Unsigned>::to_usize()
+    }
+}
+
+impl<T: Default + Copy> Vector3<T> {
     pub fn x(&self) -> T {
         self[0][0]
     }
@@ -61,8 +76,7 @@ impl<T: Default + Copy> Vector3<T>
     }
 }
 
-impl<T: Default + Copy> Vector4<T>
-{
+impl<T: Default + Copy> Vector4<T> {
     pub fn x(&self) -> T {
         self[0][0]
     }
@@ -82,6 +96,21 @@ impl<T: Default + Copy> Vector4<T>
 
     pub fn new_vector() -> Vector4f {
         vector4f!(0.0, 0.0, 0.0, 0.0)
+    }
+}
+
+impl<N> Vectorf<N>
+where
+    N: Unsigned + Mul<U1>,
+    Prod<N, U1>: ArrayLength<VectorFloat>,
+{
+    pub fn norm(&self) -> VectorFloat {
+        self.into_iter().map(|v| v * v).sum::<VectorFloat>().sqrt()
+    }
+
+    pub fn normalize(&mut self) {
+        let norm = self.norm();
+        self.into_iter().for_each(|v| { *v = *v / norm ;})
     }
 }
 
