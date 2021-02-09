@@ -1,4 +1,7 @@
-use crate::{algebra::vector::Vector4f, *};
+use crate::{
+    algebra::{matrix::Matrix4f, vector::Vector4f},
+    *,
+};
 use std::convert::TryInto;
 use tobj;
 
@@ -63,5 +66,13 @@ impl Model {
     }
     pub fn vertexs_mut(&mut self) -> &mut Vec<Vector4f> {
         &mut self.vertexs
+    }
+
+    pub fn transform(&mut self, transform_matrix: &Matrix4f) {
+        self.vertexs = self
+            .vertexs
+            .iter()
+            .map(|vertex| transform_matrix * vertex)
+            .collect();
     }
 }
