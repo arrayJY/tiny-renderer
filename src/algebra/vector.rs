@@ -1,8 +1,8 @@
-use std::ops::Mul;
+use std::{ops::{Mul, Neg}};
 
 use super::matrix::Matrix;
 use crate::{input_matrix, vector4f};
-use generic_array::{ArrayLength, functional::FunctionalSequence};
+use generic_array::{ArrayLength};
 use typenum::{Prod, Unsigned, U1, U2, U3, U4};
 
 #[allow(dead_code)]
@@ -69,10 +69,10 @@ impl<T: Default + Copy> Vector3<T> {
         self[0][0]
     }
     pub fn y(&self) -> T {
-        self[0][1]
+        self[1][0]
     }
     pub fn z(&self) -> T {
-        self[0][2]
+        self[2][0]
     }
 }
 
@@ -81,13 +81,13 @@ impl<T: Default + Copy> Vector4<T> {
         self[0][0]
     }
     pub fn y(&self) -> T {
-        self[0][1]
+        self[1][0]
     }
     pub fn z(&self) -> T {
-        self[0][2]
+        self[2][0]
     }
     pub fn w(&self) -> T {
-        self[0][3]
+        self[3][0]
     }
 
     pub fn new_point() -> Vector4f {
@@ -111,6 +111,23 @@ where
     pub fn normalize(&mut self) {
         let norm = self.norm();
         self.into_iter().for_each(|v| { *v = *v / norm ;})
+    }
+
+}
+
+impl<T, N> Neg for Vector<T, N>
+where 
+    T: Default + Neg<Output = T> + Copy,
+    N: Unsigned + Mul<U1>,
+    Prod<N, U1>: ArrayLength<T>,
+{
+    type Output = Vector<T, N>;
+    fn neg(self) -> Self::Output {
+        let mut v = Self::Output::new();
+        for (row, col) in self.index_iter(){
+            v[row][col] = -self[row][col];
+        }
+        v
     }
 }
 
@@ -165,7 +182,7 @@ macro_rules! vector2f {
 #[macro_export]
 macro_rules! vector3f {
     () => {
-        Vectorrf::new();
+        Vector3f::new();
     };
     ($($val: expr), +) => {
         {

@@ -106,6 +106,12 @@ where
         }
         m
     }
+
+    pub fn index_iter(&self) -> impl Iterator<Item = (usize, usize)> {
+        let rows = self.rows();
+        let cols = self.cols();
+        (0..rows).flat_map(move |a| (0..cols).map(move |b| (a, b)))
+    }
 }
 
 impl<T, Row, Col> Matrix<T, Row, Col>
@@ -153,11 +159,6 @@ where
         m
     }
 
-    pub fn index_iter(&self) -> impl Iterator<Item = (usize, usize)> {
-        let rows = self.rows();
-        let cols = self.cols();
-        (0..rows).flat_map(move |a| (0..cols).map(move |b| (a, b)))
-    }
 }
 
 #[allow(unused_macros)]
