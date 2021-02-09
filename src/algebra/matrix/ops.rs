@@ -1,7 +1,7 @@
 use super::Matrix;
 use generic_array::typenum::Unsigned;
 use generic_array::ArrayLength;
-use std::iter::Sum;
+use std::{iter::Sum, ops::Div};
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign};
 use typenum::Prod;
 
@@ -156,3 +156,40 @@ where
         &mut self.data[index * cols..index * cols + cols]
     }
 }
+
+macro_rules! impl_scalar_ops {
+    ($trait: ident, $func: ident, $op: tt) => {
+        impl<T, Row, Col> $trait<T> for Matrix<T, Row, Col>
+        where
+            T: Default + Copy + $trait<Output = T>,
+            Row: Unsigned + Mul<Col>,
+            Col: Unsigned,
+            Prod<Row, Col>: ArrayLength<T>,
+        {
+            type Output = Matrix<T, Row, Col>;
+            fn $func(self, scalar: T) -> Self::Output {
+                Matrix {
+                    data: self.data.iter().map(|&v| v $op scalar).collect()
+                }
+            }
+        }
+
+        impl<T, Row, Col> $trait<T> for &Matrix<T, Row, Col>
+        where
+            T: Default + Copy + $trait<Output = T>,
+            Row: Unsigned + Mul<Col>,
+            Col: Unsigned,
+            Prod<Row, Col>: ArrayLength<T>,
+        {
+            type Output = Matrix<T, Row, Col>;
+            fn $func(self, scalar: T) -> Self::Output {
+                Matrix {
+                    data: self.data.iter().map(|&v| v $op scalar).collect()
+                }
+            }
+        }
+    };
+}
+
+impl_scalar_ops!(Mul, mul, *);
+impl_scalar_ops!(Div, div, /);
