@@ -1,5 +1,6 @@
 use super::matrix::Matrix;
 use typenum::{U1, U2, U3, U4};
+use crate::{input_matrix, vector4f};
 
 #[allow(dead_code)]
 pub type Vector<T, N> = Matrix<T, N, U1>;
@@ -45,6 +46,43 @@ macro_rules! vector {
         v
         }
     };
+}
+
+impl<T: Default + Copy> Vector3<T>
+{
+    pub fn x(&self) -> T {
+        self[0][0]
+    }
+    pub fn y(&self) -> T {
+        self[0][1]
+    }
+    pub fn z(&self) -> T {
+        self[0][2]
+    }
+}
+
+impl<T: Default + Copy> Vector4<T>
+{
+    pub fn x(&self) -> T {
+        self[0][0]
+    }
+    pub fn y(&self) -> T {
+        self[0][1]
+    }
+    pub fn z(&self) -> T {
+        self[0][2]
+    }
+    pub fn w(&self) -> T {
+        self[0][3]
+    }
+
+    pub fn new_point() -> Vector4f {
+        vector4f!(0.0, 0.0, 0.0, 1.0)
+    }
+
+    pub fn new_vector() -> Vector4f {
+        vector4f!(0.0, 0.0, 0.0, 0.0)
+    }
 }
 
 #[macro_export]
