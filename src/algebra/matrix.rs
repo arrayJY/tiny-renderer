@@ -1,4 +1,5 @@
 pub mod macros;
+mod iter;
 mod ops;
 pub mod transform;
 use generic_array::typenum::{Prod, Unsigned};
