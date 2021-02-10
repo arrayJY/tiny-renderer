@@ -1,6 +1,6 @@
 use crate::{
     algebra::vector::{Vector3f, Vector4f},
-    pipeline::geometry::{model::Model, view::Camera},
+    pipeline::transformation::{model::Model, view::Camera},
     *,
 };
 #[test]

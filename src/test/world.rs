@@ -1,4 +1,4 @@
-use crate::pipeline::geometry::{model::Model, world::World};
+use crate::pipeline::transformation::{model::Model, world::World};
 use crate::test::about_equal;
 use crate::{algebra::vector::Vector4f, *};
 use std::f32::consts::PI;
