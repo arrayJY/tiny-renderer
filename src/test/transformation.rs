@@ -13,6 +13,10 @@ fn load_model() -> Model{
     model.remove(0)
 }
 
+fn first_vertext(mut model: Model) -> Vector4f {
+    model.vertexs.remove(0)
+}
+
 #[test]
 fn modeling_transformation() -> Result<(), String>{
     let modeling = Modeling::new() 
@@ -25,7 +29,7 @@ fn modeling_transformation() -> Result<(), String>{
     model.transform(&modeling_matrix);
 
 
-    let first_vertex = model.vertexs_mut().remove(0);
+    let first_vertex = first_vertext(model);
     //(1.0, 1.0, -1.0) -> (2.0, 2.0, 0.0) -> (1.0, 4.0, 0.0) -> (1.0, 0.0, 4.0)
     about_equal(&first_vertex, &vector4f!(1.0, 0.0, 4.0, 1.0))
 }
@@ -42,7 +46,7 @@ fn view_transformation() {
     // assert_eq!(model.len(), 1);
     model.transform(&view_transform_matrix);
 
-    let first_vertex = model.vertexs_mut().remove(0);
+    let first_vertex = first_vertext(model);
     //(1.0, 1.0, -1.0) -> (0.0, 0.0, -2.0) -> (0.0, 0.0, 2.0)
     assert_eq!(first_vertex, vector4f!(0.0, 0.0, 2.0, 1.0));
 }
