@@ -1,8 +1,8 @@
-use std::{ops::{Mul, Neg}};
+use std::ops::{Mul, Neg};
 
 use super::matrix::Matrix;
 use crate::{input_matrix, vector4f};
-use generic_array::{ArrayLength};
+use generic_array::ArrayLength;
 use typenum::{Prod, Unsigned, U1, U2, U3, U4};
 
 #[allow(dead_code)]
@@ -110,13 +110,14 @@ where
 
     pub fn normalize(&mut self) {
         let norm = self.norm();
-        self.into_iter().for_each(|v| { *v = *v / norm ;})
+        self.into_iter().for_each(|v| {
+            *v = *v / norm;
+        })
     }
-
 }
 
 impl<T, N> Neg for Vector<T, N>
-where 
+where
     T: Default + Neg<Output = T> + Copy,
     N: Unsigned + Mul<U1>,
     Prod<N, U1>: ArrayLength<T>,
@@ -124,7 +125,7 @@ where
     type Output = Vector<T, N>;
     fn neg(self) -> Self::Output {
         let mut v = Self::Output::new();
-        for (row, col) in self.index_iter(){
+        for (row, col) in self.index_iter() {
             v[row][col] = -self[row][col];
         }
         v

@@ -1,8 +1,5 @@
 use crate::{
-    algebra::{
-        matrix::Matrix4f,
-        vector::{Vector3f},
-    },
+    algebra::{matrix::Matrix4f, vector::Vector3f},
     *,
 };
 pub struct Camera {
