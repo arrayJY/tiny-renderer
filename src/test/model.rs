@@ -1,5 +1,5 @@
 use typenum::U4;
-use crate::{algebra::vector::Vectorf, pipeline::transformation::model::*, vectorf};
+use crate::{algebra::vector::Vectorf, pipeline::model::*, vectorf};
 #[test]
 fn load_from_obj(){
     let m = Model::from_obj("box.obj");

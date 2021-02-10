@@ -5,9 +5,9 @@ use typenum::{Prod, Unsigned};
 
 mod algebra;
 mod model;
-mod world;
-mod view;
+mod transformation;
 
+#[allow(dead_code)]
 pub fn about_equal<Row, Col>(m1: &Matrixf<Row, Col>, m2: &Matrixf<Row, Col>) -> Result<(), String>
 where
     Row: Unsigned + Mul<Col> + Debug,
