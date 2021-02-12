@@ -11,6 +11,10 @@ pub struct Model {
     pub vertexs: Vec<Vector4f>,
 }
 
+pub struct Triangle {
+    pub points: Vec<Vector4f>,
+}
+
 #[allow(dead_code)]
 impl Model {
     pub fn new() -> Self {
@@ -74,5 +78,18 @@ impl Model {
             .iter()
             .map(|vertex| transform_matrix * vertex)
             .collect();
+    }
+
+    pub fn triangles(&self) -> Vec<Triangle> {
+        self.indices()
+            .iter()
+            .map(|index_group| Triangle {
+                points: index_group
+                    .iter()
+                    .map(|&index| &self.vertexs[index as usize])
+                    .map(|vertex| Vector4f::from(vertex))
+                    .collect(),
+            })
+            .collect()
     }
 }
