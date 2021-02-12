@@ -1,5 +1,6 @@
-pub mod macros;
+mod from;
 mod iter;
+pub mod macros;
 mod ops;
 pub mod transform;
 use generic_array::typenum::{Prod, Unsigned};
@@ -8,7 +9,7 @@ use generic_array::{ArrayLength, GenericArray};
 use std::iter::Sum;
 use std::ops::{Mul, Sub};
 use std::usize;
-use typenum::{IsEqual, IsLessOrEqual, True};
+use typenum::{IsEqual, True};
 
 #[derive(Debug, PartialEq)]
 pub struct Matrix<T, Row, Col>
@@ -144,21 +145,6 @@ where
         m[2][0] = self[0][0] * rhs[1][0] - self[1][0] * rhs[0][0];
         m
     }
-
-    pub fn from<R, C>(matrix: &Matrix<T, R, C>) -> Self
-    where
-        T: Copy,
-        R: Unsigned + Mul<C> + IsLessOrEqual<Row, Output = True>,
-        C: Unsigned + IsLessOrEqual<Col, Output = True>,
-        Prod<R, C>: ArrayLength<T>,
-    {
-        let mut m = Self::new();
-        for (row, col) in matrix.index_iter() {
-            m[row][col] = matrix[row][col];
-        }
-        m
-    }
-
 }
 
 #[allow(unused_macros)]

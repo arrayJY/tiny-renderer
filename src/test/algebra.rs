@@ -3,8 +3,8 @@ use crate::algebra::typenum::{U1, U2, U3, U4};
 #[allow(unused_imports)]
 use crate::{
     algebra::{
-        vector::{Vector3f},
         matrix::{Matrix, Matrix4f, Matrixf},
+        vector::Vector3f,
     },
     *,
 };
@@ -62,16 +62,6 @@ fn matrix_transpose() {
     let m1 = matrix!(i32; U3, U1; 1, 2, 3);
     assert_eq!(matrix!(i32; U1, U3; 1, 2, 3), m1.transpose());
 }
-
-#[test]
-fn matrix_from_small_one() {
-    let m = matrixf!(U2; 1.0, 2.0, 3.0, 4.0);
-    assert_eq!(
-        Matrixf::<U3, U3>::from(&m),
-        matrixf!(U3; 1.0, 2.0, 0.0, 3.0, 4.0)
-    )
-}
-
 
 #[test]
 fn normalize_vector() {
