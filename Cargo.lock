@@ -758,8 +758,10 @@ name = "tiny-renderer"
 version = "0.1.0"
 dependencies = [
  "generic-array",
+ "raw-window-handle",
  "tobj",
  "typenum",
+ "winapi 0.3.9",
  "winit",
 ]
 
