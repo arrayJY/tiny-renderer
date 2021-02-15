@@ -6,11 +6,13 @@ use std::convert::TryInto;
 use tobj;
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct Model {
     pub indices: Vec<[u32; 3]>,
     pub vertexs: Vec<Vector4f>,
 }
 
+#[derive(Debug)]
 pub struct Triangle {
     pub points: Vec<Vector4f>,
 }
@@ -34,23 +36,20 @@ impl Model {
             .iter()
             .map(|model| {
                 let mesh = &model.mesh;
-                //Faces has been triangulated, so step by 3.
-                println!("num_face_indices: {:?}", mesh.num_face_indices);
-                let indices = (0..mesh.num_face_indices.len())
-                    .zip(mesh.num_face_indices.iter())
-                    .map(|(start, num)| {
-                        let indice: [u32; 3] = mesh.indices[start..start + *num as usize]
-                            .try_into()
-                            .unwrap();
-                        indice
-                    })
-                    .collect::<Vec<_>>();
-                let vertexs = (0..mesh.positions.len())
-                    .step_by(3)
+                let mut indices = Vec::new();
+                let mut next_face = 0;
+                for f in 0..mesh.num_face_indices.len() {
+                    let end = next_face + mesh.num_face_indices[f] as usize;
+                    let face_indices: [u32; 3] = mesh.indices[next_face..end].try_into().unwrap();
+                    indices.push(face_indices);
+                    next_face = end;
+                }
+
+                let vertexs = (0..mesh.positions.len() / 3)
                     .map(|i| {
                         let p = &mesh.positions;
                         //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
-                        vector4f!(p[i], p[i + 1], p[i + 2], 1.0)
+                        vector4f!(p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 1.0)
                     })
                     .collect::<Vec<_>>();
                 Model { indices, vertexs }
@@ -78,6 +77,7 @@ impl Model {
             .iter()
             .map(|vertex| transform_matrix * vertex)
             .collect();
+        self.normalize_vertex();
     }
 
     pub fn triangles(&self) -> Vec<Triangle> {
@@ -89,6 +89,20 @@ impl Model {
                     .map(|&index| &self.vertexs[index as usize])
                     .map(|vertex| Vector4f::from(vertex))
                     .collect(),
+            })
+            .collect()
+    }
+
+    pub fn normalize_vertex(&mut self) {
+        self.vertexs = self
+            .vertexs
+            .iter()
+            .map(|vertex| {
+                if vertex.w() != 1.0 {
+                    vertex / vertex.w()
+                } else {
+                    vertex / 1.0
+                }
             })
             .collect()
     }
