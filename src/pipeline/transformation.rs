@@ -63,9 +63,10 @@ impl Transformation {
               n, 0.0, 0.0,  0.0,
             0.0,   n, 0.0,  0.0,
             0.0, 0.0, n+f, -f*n,
-            0.0, 0.0, 0.0,  0.0
+            0.0, 0.0, 1.0,  0.0
         );
         let ortho = Transformation::orthogonal_projection_transform(camera);
+
 
         ortho * persp_to_ortho
     }
