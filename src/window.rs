@@ -20,14 +20,12 @@ pub struct Window {
 
 #[allow(dead_code)]
 impl Window {
-    pub fn new() -> Window {
-        const WIDTH: u32 = 400;
-        const HEIGHT: u32 = WIDTH;
-
+    pub fn new(width: usize, height: usize) -> Window {
         let event_loop = EventLoop::new();
         let private_window = WindowBuilder::new().build(&event_loop).unwrap();
-        private_window.set_inner_size(LogicalSize::new(WIDTH, HEIGHT));
+        private_window.set_inner_size(LogicalSize::new(width as u32, height as u32));
         private_window.set_resizable(false);
+        private_window.set_title("Viewer");
 
         let PhysicalSize { width, height } = private_window.inner_size();
 
@@ -43,6 +41,11 @@ impl Window {
             event_loop,
             platform,
         }
+    }
+
+    pub fn size(&self) -> (usize, usize) {
+        let PhysicalSize { width, height } = self.private_window.inner_size();
+        (width as usize, height as usize)
     }
 
     pub fn write_buffer(&self, buffer: &[u8]) {
