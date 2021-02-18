@@ -1,9 +1,13 @@
 use crate::{
     pipeline::{
-        camera::Camera, model::Model, rasterizer::Rasterizer, transformation::Transformation,
+        camera::Camera,
+        model::Model,
+        rasterizer::Rasterizer,
+        transformation::{modeling::Modeling, Transformation},
     },
     window::Window,
 };
+use std::time::{Instant};
 
 #[allow(dead_code)]
 pub struct Renderer {
@@ -48,39 +52,34 @@ impl Renderer {
         let mut model = self.model.unwrap();
         let camera = self.camera.unwrap();
 
+        let start = Instant::now();
         model.transform(&Transformation::view_matrix(&camera));
         model.transform(&Transformation::perspective_projection_transform(&camera));
         model.transform(&Transformation::viewport_transform(
             width as f32 / 2.0,
             height as f32 / 2.0,
         ));
+        //Move to screen center.
+        model.transform(
+            Modeling::new()
+                .translate((width as f32 / 4.0, height as f32 / 4.0, 0.0))
+                .modeling_martix(),
+        );
+        let duration = start.elapsed();
+        println!("Transformation cast: {:?}.", duration);
 
+        let start = Instant::now();
         let triangles = model.triangles();
-        //println!("{:#?}", triangles);
-
-        println!("{:?}", model.indices());
-        model.vertexs().iter().enumerate().for_each(|(i, v)| {
-            println!("Vertex {}:", i);
-            println!("{:?}", v)
-        });
-
-        triangles.iter().enumerate().for_each(|(i, t)| {
-            println!("Triangles {}:", i);
-            t.points.iter().enumerate().for_each(|(ip, p)| {
-                println!("Point {}: {:?}", ip, p);
-            });
-        });
 
         let mut rasterizer = Rasterizer::new(width, height).triangles(triangles);
         rasterizer.rasterize();
+        let duration = start.elapsed();
+        println!("Rasterization cast: {:?}.", duration);
 
         let size = width * height;
-        //let mut bitmap_buffer = vec![0u8; size * 4];
-
-        /* */
-
         let mut frame_buffer_bitmap = Vec::with_capacity(size * 4);
 
+        let start = Instant::now();
         rasterizer.frame_buffer.iter().for_each(|c| {
             frame_buffer_bitmap.push(c.b);
             frame_buffer_bitmap.push(c.g);
@@ -88,7 +87,9 @@ impl Renderer {
             frame_buffer_bitmap.push(c.a);
         });
 
+        let duration = start.elapsed();
         window.write_buffer(&frame_buffer_bitmap[..]);
+        println!("Copy bitmap to screen cast: {:?}", duration);
         window.run();
     }
 }
