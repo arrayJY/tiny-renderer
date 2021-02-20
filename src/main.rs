@@ -16,7 +16,7 @@ fn main() {
     const HEIGHT: usize = WIDTH;
     let model = Model::from_obj("box.obj").remove(0);
     let camera = Camera::new()
-        .eye_position(vector3f!(4.0, 4.0, 4.0))
+        .eye_position(vector3f!(3.0, 3.0, 3.0))
         .gaze_direct(vector3f!(-1.0, -1.0, -1.0))
         .up_direct(vector3f!(-1.0, 1.0, -1.0))
         .eye_fov(PI / 2.0)

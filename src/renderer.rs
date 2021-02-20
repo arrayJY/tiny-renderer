@@ -1,10 +1,9 @@
+use pipeline::shader::depth_shader::DepthShader;
+
 use crate::algebra::{matrix::Matrix4f, vector::Vector4f};
 use crate::{
     pipeline::{
-        camera::Camera,
-        model::Model,
-        rasterizer::Rasterizer,
-        transformation::{Transformation},
+        camera::Camera, model::Model, rasterizer::Rasterizer, transformation::Transformation,
     },
     window::Window,
     *,
@@ -49,7 +48,7 @@ impl Renderer {
         window.run(self);
     }
 
-    pub fn bitmap_buffer(&self, width: usize, height: usize) -> Vec<u8>{
+    pub fn bitmap_buffer(&self, width: usize, height: usize) -> Vec<u8> {
         let origin_model = self.model.as_ref().unwrap();
         let camera = self.camera.as_ref().unwrap();
 
@@ -69,7 +68,18 @@ impl Renderer {
         let size = width * height;
         let mut frame_buffer_bitmap = Vec::with_capacity(size * 4);
 
-        rasterizer.frame_buffer.iter().rev().for_each(|c| {
+        let mut shader = DepthShader::new(height, width);
+        shader.shade(&rasterizer.z_buffer);
+
+        /*
+        shader
+            .frame_buffer()
+            .iter()
+            .filter_map(|c| if c.r == 255 { None } else { Some(c) })
+            .for_each(|v| println!("{:?}", v));
+            */
+
+        shader.frame_buffer().iter().rev().for_each(|c| {
             frame_buffer_bitmap.push(c.b);
             frame_buffer_bitmap.push(c.g);
             frame_buffer_bitmap.push(c.r);
@@ -79,18 +89,15 @@ impl Renderer {
         frame_buffer_bitmap
     }
 
-
     pub fn rotate_camera(&mut self, angle: f32) {
         let camera = self.camera.as_ref().unwrap();
         let e = &camera.eye_position;
-        let p=
-            Matrix4f::rotate_around_y_matrix(angle) * vector4f!(e.x(), e.y(), e.z(), 1.0);
-        let mut g=  &vector4f!(0.0, 0.0, 0.0, 1.0) - &p;
+        let p = Matrix4f::rotate_around_y_matrix(angle) * vector4f!(e.x(), e.y(), e.z(), 1.0);
+        let mut g = &vector4f!(0.0, 0.0, 0.0, 1.0) - &p;
         g.normalize();
-        let p= vector3f!(p.x(),p.y(), p.z());
-        let g= vector3f!(g.x(),g.y(), g.z());
-        let u= vector3f!(g.x(),-g.y(), g.z());
-
+        let p = vector3f!(p.x(), p.y(), p.z());
+        let g = vector3f!(g.x(), g.y(), g.z());
+        let u = vector3f!(g.x(), -g.y(), g.z());
 
         let new_camera = camera.clone().eye_position(p).gaze_direct(g).up_direct(u);
         self.camera = Some(new_camera);
