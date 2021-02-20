@@ -60,7 +60,20 @@ impl Renderer {
             width as f32,
             height as f32,
         ));
-        let triangles = model.triangles();
+        let triangles = model
+            .triangles()
+            .iter()
+            .filter_map(|t| {
+                //Simple clip
+                if t.points.iter().any(|v| {
+                    v.x() >= 0.0 && v.x() <= width as f32 && v.y() >= 0.0 && v.y() <= height as f32
+                }) {
+                    Some(t.clone())
+                } else {
+                    None
+                }
+            })
+            .collect();
 
         let mut rasterizer = Rasterizer::new(width, height).triangles(triangles);
         rasterizer.rasterize();
@@ -70,14 +83,6 @@ impl Renderer {
 
         let mut shader = DepthShader::new(height, width);
         shader.shade(&rasterizer.z_buffer);
-
-        /*
-        shader
-            .frame_buffer()
-            .iter()
-            .filter_map(|c| if c.r == 255 { None } else { Some(c) })
-            .for_each(|v| println!("{:?}", v));
-            */
 
         shader.frame_buffer().iter().rev().for_each(|c| {
             frame_buffer_bitmap.push(c.b);

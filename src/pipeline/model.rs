@@ -12,7 +12,7 @@ pub struct Model {
     pub vertexs: Vec<Vector4f>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Triangle {
     pub points: Vec<Vector4f>,
 }
