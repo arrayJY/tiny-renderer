@@ -69,7 +69,7 @@ impl Renderer {
         let size = width * height;
         let mut frame_buffer_bitmap = Vec::with_capacity(size * 4);
 
-        rasterizer.frame_buffer.iter().for_each(|c| {
+        rasterizer.frame_buffer.iter().rev().for_each(|c| {
             frame_buffer_bitmap.push(c.b);
             frame_buffer_bitmap.push(c.g);
             frame_buffer_bitmap.push(c.r);
