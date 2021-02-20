@@ -1,31 +1,12 @@
-use algebra::vector::Vector3f;
+use algebra::vector::{Vector3f};
 
 use crate::*;
 
 use super::model::Triangle;
 
-#[derive(Debug, Clone)]
-pub struct Color {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-    pub a: u8,
-}
-impl Color {
-    pub fn new() -> Self {
-        Self {
-            r: 0u8,
-            g: 0u8,
-            b: 0u8,
-            a: 0u8,
-        }
-    }
-}
-
 #[allow(dead_code)]
 pub struct Rasterizer {
     pub triangles: Vec<Triangle>,
-    pub frame_buffer: Vec<Color>,
     pub z_buffer: Vec<f32>,
     pub width: usize,
     pub height: usize,
@@ -36,7 +17,6 @@ impl Rasterizer {
     pub fn new(width: usize, height: usize) -> Self {
         Self {
             triangles: Vec::new(),
-            frame_buffer: vec![Color::new(); width * height],
             z_buffer: vec![f32::MAX; width * height],
             width,
             height,
@@ -49,15 +29,8 @@ impl Rasterizer {
     }
 
     pub fn rasterize(&mut self) {
-        let frame_buffer = &mut self.frame_buffer;
         let z_buffer = &mut self.z_buffer;
         let width = self.width;
-        let red = Color {
-            r: 255u8,
-            g: 0u8,
-            b: 0u8,
-            a: 0u8,
-        };
 
         self.triangles.iter().for_each(|triangle| {
             let (min_x, min_y, max_x, max_y) = Rasterizer::bounding_box(triangle);
@@ -66,10 +39,10 @@ impl Rasterizer {
             coord_iter.for_each(|(x, y)| {
                 if Rasterizer::inside_triangle((x, y), triangle) {
                     let index = y * width + x;
-                    let z = -Rasterizer::z_interpolation(triangle);
+                    let barycenter = Rasterizer::barycentric_2d(x as f32, y as f32, triangle);
+                    let z = -Rasterizer::z_interpolation(triangle, barycenter);
                     if z < z_buffer[index] {
                         //set color
-                        frame_buffer[index] = red.clone();
                         z_buffer[index] = z;
                     }
                 }
@@ -77,8 +50,36 @@ impl Rasterizer {
         });
     }
 
-    fn z_interpolation(triangle: &Triangle) -> f32 {
-        triangle.points.iter().map(|v| v.z()).sum::<f32>() / triangle.points.len() as f32
+    fn z_interpolation(triangle: &Triangle, (alpha, beta, gamma): (f32, f32, f32)) -> f32 {
+        let v = &triangle.points;
+        let w_reciprocal= 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
+        let mut z_interpolated =
+                        alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
+        z_interpolated *= w_reciprocal;
+        z_interpolated
+    }
+
+    fn barycentric_2d(x: f32, y: f32, triangle: &Triangle) -> (f32, f32, f32) {
+        let v = &triangle.points;
+        let c1 = (x * (v[1].y() - v[2].y()) + (v[2].x() - v[1].x()) * y + v[1].x() * v[2].y()
+            - v[2].x() * v[1].y())
+            / (v[0].x() * (v[1].y() - v[2].y())
+                + (v[2].x() - v[1].x()) * v[0].y()
+                + v[1].x() * v[2].y()
+                - v[2].x() * v[1].y());
+        let c2 = (x * (v[2].y() - v[0].y()) + (v[0].x() - v[2].x()) * y + v[2].x() * v[0].y()
+            - v[0].x() * v[2].y())
+            / (v[1].x() * (v[2].y() - v[0].y())
+                + (v[0].x() - v[2].x()) * v[1].y()
+                + v[2].x() * v[0].y()
+                - v[0].x() * v[2].y());
+        let c3 = (x * (v[0].y() - v[1].y()) + (v[1].x() - v[0].x()) * y + v[0].x() * v[1].y()
+            - v[1].x() * v[0].y())
+            / (v[2].x() * (v[0].y() - v[1].y())
+                + (v[1].x() - v[0].x()) * v[2].y()
+                + v[0].x() * v[1].y()
+                - v[1].x() * v[0].y());
+        (c1, c2, c3)
     }
 
     fn bounding_box(triangle: &Triangle) -> (usize, usize, usize, usize) {
