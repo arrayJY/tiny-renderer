@@ -39,14 +39,14 @@ impl Transformation {
     }
 
     pub fn orthogonal_projection_transform(camera: &Camera) -> Matrix4f {
-        let n = camera.near;
-        let f = camera.far;
+        let n = -camera.near;
+        let f = -camera.far;
 
-        let t = n * (camera.eye_fov / 2.0).tan();
+        let t = -n * (camera.eye_fov / 2.0).tan();
         let b = -t;
 
-        let l = b * camera.aspect_ratio;
         let r = t * camera.aspect_ratio;
+        let l = -r;
 
         let translate_matrix =
             Matrix4f::translation_matrix(-(r + l) / 2.0, -(t + b) / 2.0, -(n + f) / 2.0);
@@ -57,8 +57,8 @@ impl Transformation {
     }
 
     pub fn perspective_projection_transform(camera: &Camera) -> Matrix4f {
-        let n = camera.near;
-        let f = camera.far;
+        let n = -camera.near;
+        let f = -camera.far;
         let persp_to_ortho = matrix4f!(
               n, 0.0, 0.0,  0.0,
             0.0,   n, 0.0,  0.0,
@@ -75,7 +75,7 @@ impl Transformation {
         matrix4f!(
             width/2.0,        0.0, 0.0, width/2.0,
                   0.0, height/2.0, 0.0, height/2.0,
-                  0.0,        0.0, 0.0, 0.0,
+                  0.0,        0.0, 1.0, 0.0,
                   0.0,        0.0, 0.0, 1.0
         )
     }
