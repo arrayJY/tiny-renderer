@@ -1,4 +1,5 @@
 use crate::algebra::vector::Vector3f;
+#[derive(Debug, Clone)]
 pub struct Camera {
     pub gaze_direct: Vector3f,
     pub up_direct: Vector3f,

@@ -6,7 +6,7 @@ use std::convert::TryInto;
 use tobj;
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Model {
     pub indices: Vec<[u32; 3]>,
     pub vertexs: Vec<Vector4f>,

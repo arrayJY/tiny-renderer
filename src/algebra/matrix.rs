@@ -11,7 +11,7 @@ use std::ops::{Mul, Sub};
 use std::usize;
 use typenum::{IsEqual, True};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Matrix<T, Row, Col>
 where
     T: Default,
