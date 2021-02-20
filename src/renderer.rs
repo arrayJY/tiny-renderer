@@ -4,7 +4,7 @@ use crate::{
         camera::Camera,
         model::Model,
         rasterizer::Rasterizer,
-        transformation::{modeling::Modeling, Transformation},
+        transformation::{Transformation},
     },
     window::Window,
     *,
@@ -58,16 +58,9 @@ impl Renderer {
         model.transform(&Transformation::view_matrix(camera));
         model.transform(&Transformation::perspective_projection_transform(camera));
         model.transform(&Transformation::viewport_transform(
-            width as f32 / 2.0,
-            height as f32 / 2.0,
+            width as f32,
+            height as f32,
         ));
-        //Move to screen center.
-        model.transform(
-            Modeling::new()
-                .translate((width as f32 / 4.0, height as f32 / 4.0, 0.0))
-                .modeling_martix(),
-        );
-
         let triangles = model.triangles();
 
         let mut rasterizer = Rasterizer::new(width, height).triangles(triangles);
