@@ -1,9 +1,11 @@
 mod platform;
+
 use platform::{Platform, WindowsPlatform};
+use std::f32::consts::PI;
 
 use winit::{
     dpi::{LogicalSize, PhysicalSize},
-    event::{Event, WindowEvent},
+    event::{DeviceEvent, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Window as WinitWindow,
     window::WindowBuilder,
@@ -11,8 +13,11 @@ use winit::{
 
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
+use crate::renderer::{Renderer};
+
 #[allow(dead_code)]
-pub struct Window {
+pub struct Window
+{
     event_loop: EventLoop<()>,
     private_window: WinitWindow,
     platform: Platform,
@@ -52,10 +57,15 @@ impl Window {
         self.platform.write_buffer(buffer)
     }
 
-    pub fn run(self) {
+    pub fn run(self, mut renderer: Renderer) {
+
+        let (width, height) = self.size();
+        self.write_buffer(&renderer.bitmap_buffer(width, height)[..]);
+
         let window = self.private_window;
         let event_loop = self.event_loop;
         let platform = self.platform;
+
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
             match event {
@@ -65,6 +75,30 @@ impl Window {
                 } if window_id == window.id() => *control_flow = ControlFlow::Exit,
                 Event::RedrawRequested(_) => {
                     platform.redraw();
+                }
+                //Rotate camera
+                Event::DeviceEvent {
+                    event:
+                        DeviceEvent::Key(KeyboardInput {
+                            virtual_keycode, ..
+                        }),
+                    ..
+                } => {
+                    if let Some(keycode) = virtual_keycode {
+                        match keycode {
+                            VirtualKeyCode::A => {
+                                renderer.rotate_camera(PI / 180.0);
+                                platform.write_buffer(&renderer.bitmap_buffer(width, height)[..]);
+                                platform.redraw();
+                            }
+                            VirtualKeyCode::D => {
+                                renderer.rotate_camera(-PI / 180.0);
+                                platform.write_buffer(&renderer.bitmap_buffer(width, height)[..]);
+                                platform.redraw();
+                            }
+                            _ => {}
+                        }
+                    }
                 }
                 _ => (),
             }

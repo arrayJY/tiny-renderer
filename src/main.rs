@@ -16,13 +16,13 @@ fn main() {
     const HEIGHT: usize = WIDTH;
     let model = Model::from_obj("box.obj").remove(0);
     let camera = Camera::new()
-        .eye_position(vector3f!(5.0, 5.0, 5.0))
+        .eye_position(vector3f!(3.0, 3.0, 3.0))
         .gaze_direct(vector3f!(-1.0, -1.0, -1.0))
         .up_direct(vector3f!(-1.0, 1.0, -1.0))
-        .eye_fov(PI / 2.0)
+        .eye_fov(PI / 4.0)
         .aspect_ratio(WIDTH as f32 / HEIGHT as f32)
         .near(1.0)
-        .far(100.0);
+        .far(10000.0);
 
     Renderer::new(WIDTH, HEIGHT)
         .model(model)
