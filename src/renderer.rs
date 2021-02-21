@@ -1,9 +1,16 @@
-use pipeline::shader::{Shader};
+use pipeline::{
+    model::Triangle,
+    shader::{Color, Shader},
+};
 
-use crate::algebra::{matrix::Matrix4f, vector::Vector4f};
+use crate::algebra::{
+    matrix::Matrix4f,
+    vector::{Vector3f, Vector4f},
+};
 use crate::{
     pipeline::{
         camera::Camera, model::Model, rasterizer::Rasterizer, transformation::Transformation,
+        shader::all_shaders,
     },
     window::Window,
     *,
@@ -11,28 +18,22 @@ use crate::{
 
 #[allow(dead_code)]
 pub struct Renderer {
-    pub model: Option<Model>,
+    pub models: Option<Vec<Model>>,
     pub camera: Option<Camera>,
     pub window: Option<Window>,
-    pub rasterizer: Option<Rasterizer>,
     pub width: usize,
     pub height: usize,
     pub shaders: Vec<Box<dyn Shader>>,
     pub shader_index: usize,
 }
 
-fn rotate_around_axis(v: &Vector3f, axis: &Vector3f, angle: f32) -> Vector3f {
-    v * angle.cos() + axis.cross(v) * angle.sin() + axis * axis.dot(v) * (1.0 - angle.cos())
-}
-
 #[allow(dead_code)]
 impl Renderer {
     pub fn new(width: usize, height: usize) -> Self {
         Self {
-            model: None,
+            models: None,
             camera: None,
             window: None,
-            rasterizer: None,
             width,
             height,
             shaders: Vec::new(),
@@ -40,8 +41,8 @@ impl Renderer {
         }
     }
 
-    pub fn model(mut self, model: Model) -> Self {
-        self.model = Some(model);
+    pub fn models(mut self, models: Vec<Model>) -> Self {
+        self.models = Some(models);
         self
     }
 
@@ -55,58 +56,26 @@ impl Renderer {
         self
     }
 
-    pub fn render(self) {
+    pub fn run(self) {
         let (width, height) = (self.width, self.height);
         let window = Window::new(width, height);
         window.run(self);
     }
 
-    pub fn bitmap_buffer(&self, width: usize, height: usize) -> Vec<u8> {
-        let origin_model = self.model.as_ref().unwrap();
+    pub fn render(&self, width: usize, height: usize) -> Vec<u8> {
         let camera = self.camera.as_ref().unwrap();
-
-        let mut model = origin_model.clone();
-
-        model.transform(&Transformation::view_matrix(camera));
-        model.transform(&Transformation::perspective_projection_transform(camera));
-        model.transform(&Transformation::viewport_transform(
-            width as f32,
-            height as f32,
-        ));
-        let triangles = model
-            .triangles()
-            .iter()
-            .filter_map(|t| {
-                //Simple clip
-                if t.points.iter().any(|v| {
-                    v.x() >= 0.0 && v.x() <= width as f32 && v.y() >= 0.0 && v.y() <= height as f32
-                }) {
-                    Some(t.clone())
-                } else {
-                    None
-                }
-            })
-            .collect();
+        let models = self.models.as_ref().unwrap();
+        let triangles = triangles_from_models(models, camera, width, height);
 
         let mut rasterizer = Rasterizer::new(width, height).triangles(triangles);
         rasterizer.rasterize();
-
-        let size = width * height;
-        let mut frame_buffer_bitmap = Vec::with_capacity(size * 4);
 
         assert!(!self.shaders.is_empty());
 
         let shader = self.shaders[self.shader_index].as_ref();
         let frame_buffer = shader.shade(&rasterizer.fragment_buffer);
-
-        frame_buffer.iter().rev().for_each(|c| {
-            frame_buffer_bitmap.push(c.b);
-            frame_buffer_bitmap.push(c.g);
-            frame_buffer_bitmap.push(c.r);
-            frame_buffer_bitmap.push(c.a);
-        });
-
-        frame_buffer_bitmap
+        let bitmap = bitmap_from_framebuffer(&frame_buffer, width, height);
+        bitmap
     }
 
     pub fn next_shader(&mut self) {
@@ -150,4 +119,70 @@ impl Renderer {
         let new_camera = camera.clone().eye_position(p);
         self.camera = Some(new_camera);
     }
+}
+
+impl Default for Renderer {
+    fn default() -> Self {
+        Self {
+            models: None,
+            camera: Some(Camera::default()),
+            window: None,
+            width: 800,
+            height: 800,
+            shaders: all_shaders(),
+            shader_index: 0,
+        }
+    }
+}
+
+/** Some functions **/
+
+fn rotate_around_axis(v: &Vector3f, axis: &Vector3f, angle: f32) -> Vector3f {
+    v * angle.cos() + axis.cross(v) * angle.sin() + axis * axis.dot(v) * (1.0 - angle.cos())
+}
+
+fn triangles_from_models(
+    models: &[Model],
+    camera: &Camera,
+    width: usize,
+    height: usize,
+) -> Vec<Triangle> {
+    models
+        .iter()
+        .map(|m| {
+            let mut model = m.clone();
+            mvp_viewport_transform(&mut model, camera, width, height);
+            model.triangles()
+        })
+        .flatten()
+        .collect::<Vec<_>>()
+}
+
+fn mvp_viewport_transform(model: &mut Model, camera: &Camera, width: usize, height: usize) {
+    model.transform(&Transformation::view_matrix(camera));
+    model.transform(&Transformation::perspective_projection_transform(camera));
+    model.transform(&Transformation::viewport_transform(
+        width as f32,
+        height as f32,
+    ));
+}
+
+fn bitmap_from_framebuffer(frame_buffer: &[Color], width: usize, height: usize) -> Vec<u8> {
+    let mut frame_buffer_bitmap = Vec::with_capacity(width * height * 4);
+    frame_buffer
+        .iter()
+        .enumerate()
+        .step_by(width)
+        .rev()
+        .map(|(i, ..)| &frame_buffer[i..i + width])
+        .for_each(|line| {
+            line.iter().for_each(|c| {
+                frame_buffer_bitmap.push(c.b);
+                frame_buffer_bitmap.push(c.g);
+                frame_buffer_bitmap.push(c.r);
+                frame_buffer_bitmap.push(c.a);
+            })
+        });
+
+    frame_buffer_bitmap
 }

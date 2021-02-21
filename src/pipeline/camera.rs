@@ -1,4 +1,5 @@
-use crate::algebra::vector::Vector3f;
+use crate::{algebra::vector::Vector3f, *};
+use std::f32::consts::PI;
 #[derive(Debug, Clone)]
 pub struct Camera {
     pub gaze_direct: Vector3f,
@@ -52,5 +53,19 @@ impl Camera {
     pub fn far(mut self, far: f32) -> Self {
         self.far = far;
         self
+    }
+}
+
+impl Default for Camera {
+    fn default() -> Self {
+        Camera {
+            gaze_direct: vector3f!(-1.0, -1.0, -1.0),
+            up_direct: vector3f!(-1.0, 1.0, -1.0),
+            eye_position: vector3f!(3.0, 3.0, 3.0),
+            eye_fov: PI / 2.0,
+            aspect_ratio: 1.0,
+            near: 1.5,
+            far: 50.0,
+        }
     }
 }

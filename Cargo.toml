@@ -13,3 +13,17 @@ winit = "0.24.0"
 tobj = "2.0.3"
 winapi = "0.3.9"
 raw-window-handle = "0.3.3"
+
+[[example]]
+name = "cube"
+path = "examples/cube.rs"
+
+
+[[example]]
+name = "cone"
+path = "examples/cone.rs"
+
+
+[[example]]
+name = "multi-models"
+path = "examples/multi_models.rs"

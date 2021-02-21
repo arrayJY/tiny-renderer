@@ -1,12 +1,21 @@
 use super::rasterizer::FragmentBuffer;
+use crate::shaders_builder;
 
 pub mod depth_shader;
 pub mod vertex_shader;
+
+use depth_shader::DepthShader;
+use vertex_shader::VertexShader;
 
 pub trait Shader {
     //From fragments to framebuffer
     fn shade(&self, fragments: &FragmentBuffer) -> Vec<Color>;
 }
+
+pub fn all_shaders() -> Vec<Box<dyn Shader>> {
+    shaders_builder!(DepthShader, VertexShader)
+}
+
 #[derive(Debug, Clone)]
 pub struct Color {
     pub r: u8,
@@ -18,6 +27,21 @@ impl Color {
     pub fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
     }
+}
+
+#[macro_export]
+macro_rules! shaders_builder {
+    ($($shader: tt), *) => {
+        {
+            let v: Vec<Box<dyn Shader>> = vec![
+                $(
+                    Box::new($shader::new()),
+                )*
+            ];
+            v
+        }
+
+    };
 }
 
 #[macro_export]

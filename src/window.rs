@@ -17,7 +17,7 @@ pub struct Window {
 }
 
 fn render_and_redraw(platform: &Platform, renderer: &Renderer, width: usize, height: usize) {
-    platform.write_buffer(&renderer.bitmap_buffer(width, height)[..]);
+    platform.write_buffer(&renderer.render(width, height));
     platform.redraw();
 }
 
@@ -57,7 +57,7 @@ impl Window {
 
     pub fn run(self, mut renderer: Renderer) {
         let (width, height) = self.size();
-        self.write_buffer(&renderer.bitmap_buffer(width, height)[..]);
+        self.write_buffer(&renderer.render(width, height));
 
         let window = self.private_window;
         let event_loop = self.event_loop;
