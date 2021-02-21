@@ -1,7 +1,7 @@
 use std::ops::{Mul, Neg};
 
 use super::matrix::Matrix;
-use crate::{input_matrix, vector4f};
+use crate::{input_matrix, vector3f, vector4f};
 use generic_array::ArrayLength;
 use typenum::{Prod, Unsigned, U1, U2, U3, U4};
 
@@ -96,6 +96,22 @@ impl<T: Default + Copy> Vector4<T> {
 
     pub fn new_vector() -> Vector4f {
         vector4f!(0.0, 0.0, 0.0, 0.0)
+    }
+
+}
+
+impl Vector3f {
+    pub fn from_vec4f(v: &Vector4f) -> Self {
+        vector3f!(v.x(), v.y(), v.z())
+    }
+}
+
+impl Vector4f {
+    pub fn from_vec3f_point(v: &Vector3f) -> Vector4f {
+        vector4f!(v.x(), v.y(), v.z(), 1.0)
+    }
+    pub fn from_vec3f_vector(v: &Vector3f) -> Vector4f {
+        vector4f!(v.x(), v.y(), v.z(), 0.0)
     }
 }
 

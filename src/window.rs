@@ -13,14 +13,18 @@ use winit::{
 
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
-use crate::renderer::{Renderer};
+use crate::renderer::Renderer;
 
 #[allow(dead_code)]
-pub struct Window
-{
+pub struct Window {
     event_loop: EventLoop<()>,
     private_window: WinitWindow,
     platform: Platform,
+}
+
+fn render_and_redraw(platform: &Platform, renderer: &Renderer, width: usize, height: usize) {
+    platform.write_buffer(&renderer.bitmap_buffer(width, height)[..]);
+    platform.redraw();
 }
 
 #[allow(dead_code)]
@@ -58,7 +62,6 @@ impl Window {
     }
 
     pub fn run(self, mut renderer: Renderer) {
-
         let (width, height) = self.size();
         self.write_buffer(&renderer.bitmap_buffer(width, height)[..]);
 
@@ -87,14 +90,28 @@ impl Window {
                     if let Some(keycode) = virtual_keycode {
                         match keycode {
                             VirtualKeyCode::A => {
-                                renderer.rotate_camera(PI / 180.0);
-                                platform.write_buffer(&renderer.bitmap_buffer(width, height)[..]);
-                                platform.redraw();
+                                renderer.yaw_camera(PI / 180.0);
+                                render_and_redraw(&platform, &renderer, width, height)
                             }
                             VirtualKeyCode::D => {
-                                renderer.rotate_camera(-PI / 180.0);
-                                platform.write_buffer(&renderer.bitmap_buffer(width, height)[..]);
-                                platform.redraw();
+                                renderer.yaw_camera(-PI / 180.0);
+                                render_and_redraw(&platform, &renderer, width, height)
+                            }
+                            VirtualKeyCode::W => {
+                                renderer.pitch_camera(PI / 180.0);
+                                render_and_redraw(&platform, &renderer, width, height)
+                            }
+                            VirtualKeyCode::S => {
+                                renderer.pitch_camera(-PI / 180.0);
+                                render_and_redraw(&platform, &renderer, width, height)
+                            }
+                            VirtualKeyCode::Up => {
+                                renderer.scale_camera(0.1);
+                                render_and_redraw(&platform, &renderer, width, height)
+                            }
+                            VirtualKeyCode::Down => {
+                                renderer.scale_camera(-0.1);
+                                render_and_redraw(&platform, &renderer, width, height)
                             }
                             _ => {}
                         }

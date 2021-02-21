@@ -19,6 +19,10 @@ pub struct Renderer {
     pub height: usize,
 }
 
+fn rotate_around_axis(v: &Vector3f, axis: &Vector3f, angle: f32) -> Vector3f {
+    v * angle.cos() + axis.cross(v) * angle.sin() + axis * axis.dot(v) * (1.0 - angle.cos())
+}
+
 #[allow(dead_code)]
 impl Renderer {
     pub fn new(width: usize, height: usize) -> Self {
@@ -94,17 +98,37 @@ impl Renderer {
         frame_buffer_bitmap
     }
 
-    pub fn rotate_camera(&mut self, angle: f32) {
+    pub fn yaw_camera(&mut self, angle: f32) {
         let camera = self.camera.as_ref().unwrap();
         let e = &camera.eye_position;
-        let p = Matrix4f::rotate_around_y_matrix(angle) * vector4f!(e.x(), e.y(), e.z(), 1.0);
-        let mut g = &vector4f!(0.0, 0.0, 0.0, 1.0) - &p;
-        g.normalize();
-        let p = vector3f!(p.x(), p.y(), p.z());
-        let g = vector3f!(g.x(), g.y(), g.z());
-        let u = vector3f!(g.x(), -g.y(), g.z());
+        let p = Matrix4f::rotate_around_y_matrix(angle) * Vector4f::from_vec3f_point(&e);
+        let p = Vector3f::from_vec4f(&p);
+
+        let y_axis = vector3f!(0.0, 1.0, 0.0);
+        let g = rotate_around_axis(&camera.gaze_direct, &y_axis, angle);
+        let u = rotate_around_axis(&camera.up_direct, &y_axis, angle);
 
         let new_camera = camera.clone().eye_position(p).gaze_direct(g).up_direct(u);
+        self.camera = Some(new_camera);
+    }
+
+    pub fn pitch_camera(&mut self, angle: f32) {
+        let camera = self.camera.as_ref().unwrap();
+        let mut axis = camera.up_direct.cross(&camera.gaze_direct);
+        axis.normalize();
+        let e = rotate_around_axis(&camera.eye_position, &axis, angle);
+        let g = rotate_around_axis(&camera.gaze_direct, &axis, angle);
+        let u = rotate_around_axis(&camera.up_direct, &axis, angle);
+        let new_camera = camera.clone().eye_position(e).gaze_direct(g).up_direct(u);
+        self.camera = Some(new_camera);
+    }
+
+    pub fn scale_camera(&mut self, length: f32) {
+        let camera = self.camera.as_ref().unwrap();
+        let g = Vector4f::from_vec3f_vector(&camera.gaze_direct);
+        let p: Vector4f = Vector4f::from_vec3f_point(&camera.eye_position) + (g * length);
+        let p = Vector3f::from_vec4f(&p);
+        let new_camera = camera.clone().eye_position(p);
         self.camera = Some(new_camera);
     }
 }
