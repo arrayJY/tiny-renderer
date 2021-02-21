@@ -1,4 +1,11 @@
+use super::rasterizer::FragmentBuffer;
+
 pub mod depth_shader;
+
+pub trait Shader {
+    //From fragments to framebuffer
+    fn shade(fragments: &FragmentBuffer) -> Vec<Color>;
+}
 #[derive(Debug, Clone)]
 pub struct Color {
     pub r: u8,

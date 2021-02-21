@@ -1,4 +1,4 @@
-use pipeline::shader::depth_shader::DepthShader;
+use pipeline::shader::{Shader, depth_shader::DepthShader};
 
 use crate::algebra::{matrix::Matrix4f, vector::Vector4f};
 use crate::{
@@ -85,10 +85,9 @@ impl Renderer {
         let size = width * height;
         let mut frame_buffer_bitmap = Vec::with_capacity(size * 4);
 
-        let mut shader = DepthShader::new(height, width);
-        shader.shade(&rasterizer.z_buffer);
+        let frame_buffer = DepthShader::shade(&rasterizer.fragment_buffer);
 
-        shader.frame_buffer().iter().rev().for_each(|c| {
+        frame_buffer.iter().rev().for_each(|c| {
             frame_buffer_bitmap.push(c.b);
             frame_buffer_bitmap.push(c.g);
             frame_buffer_bitmap.push(c.r);
