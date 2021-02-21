@@ -10,6 +10,8 @@ use tobj;
 pub struct Model {
     pub indices: Vec<[u32; 3]>,
     pub vertexs: Vec<Vector4f>,
+    pub normals: Option<Vec<Vector4f>>,
+    pub texture_coordinates: Option<Vec<(f32, f32)>>,
 }
 
 #[derive(Debug, Clone)]
@@ -23,10 +25,11 @@ impl Model {
         Model {
             indices: Vec::new(),
             vertexs: Vec::new(),
+            normals: None,
+            texture_coordinates: None,
         }
     }
 
-    //TODO: load more information.
     pub fn from_obj(path: &str) -> Vec<Self> {
         let obj = tobj::load_obj(path, true);
         assert!(obj.is_ok());
@@ -38,6 +41,8 @@ impl Model {
                 let mesh = &model.mesh;
                 let mut indices = Vec::new();
                 let mut next_face = 0;
+
+                //Load indices.
                 for f in 0..mesh.num_face_indices.len() {
                     let end = next_face + mesh.num_face_indices[f] as usize;
                     let face_indices: [u32; 3] = mesh.indices[next_face..end].try_into().unwrap();
@@ -45,6 +50,7 @@ impl Model {
                     next_face = end;
                 }
 
+                //Load vertexs.
                 let vertexs = (0..mesh.positions.len() / 3)
                     .map(|i| {
                         let p = &mesh.positions;
@@ -52,7 +58,42 @@ impl Model {
                         vector4f!(p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 1.0)
                     })
                     .collect::<Vec<_>>();
-                Model { indices, vertexs }
+
+                //Load normals.
+                let normals = if mesh.normals.is_empty() {
+                    None
+                } else {
+                    Some(
+                        (0..mesh.normals.len() / 3)
+                            .map(|i| {
+                                let p = &mesh.positions;
+                                //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
+                                vector4f!(p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 1.0)
+                            })
+                            .collect::<Vec<_>>(),
+                    )
+                };
+
+                //Load texture_coordinates.
+                let texture_coordinates = if mesh.texcoords.is_empty() {
+                    None
+                } else {
+                    Some(
+                        (0..mesh.texcoords.len() / 2)
+                            .map(|i| {
+                                let p = &mesh.texcoords;
+                                //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
+                                (p[i * 2], p[i * 2 + 1])
+                            })
+                            .collect::<Vec<_>>(),
+                    )
+                };
+                Model {
+                    indices,
+                    vertexs,
+                    normals,
+                    texture_coordinates,
+                }
             })
             .collect()
     }
