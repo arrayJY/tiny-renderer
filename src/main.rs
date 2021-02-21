@@ -9,8 +9,13 @@ mod test;
 use std::f32::consts::PI;
 
 use algebra::vector::Vector3f;
-use pipeline::{camera::Camera, model::Model};
+use pipeline::{
+    camera::Camera,
+    model::Model,
+    shader::{depth_shader::DepthShader, vertex_shader::VertexShader, Shader},
+};
 use renderer::Renderer;
+
 fn main() {
     const WIDTH: usize = 800;
     const HEIGHT: usize = WIDTH;
@@ -23,9 +28,12 @@ fn main() {
         .aspect_ratio(WIDTH as f32 / HEIGHT as f32)
         .near(1.5)
         .far(20.0);
+    let shaders: Vec<Box<dyn Shader>> =
+        vec![Box::new(DepthShader::new()), Box::new(VertexShader::new())];
 
     Renderer::new(WIDTH, HEIGHT)
         .model(model)
         .camera(camera)
+        .shaders(shaders)
         .render();
 }

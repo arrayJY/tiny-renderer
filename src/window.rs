@@ -3,13 +3,7 @@ mod platform;
 use platform::{Platform, WindowsPlatform};
 use std::f32::consts::PI;
 
-use winit::{
-    dpi::{LogicalSize, PhysicalSize},
-    event::{DeviceEvent, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::Window as WinitWindow,
-    window::WindowBuilder,
-};
+use winit::{dpi::{LogicalSize, PhysicalSize}, event::{DeviceEvent, ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent}, event_loop::{ControlFlow, EventLoop}, window::Window as WinitWindow, window::WindowBuilder};
 
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
@@ -83,10 +77,12 @@ impl Window {
                 Event::DeviceEvent {
                     event:
                         DeviceEvent::Key(KeyboardInput {
-                            virtual_keycode, ..
+                            virtual_keycode,
+                            state,
+                            ..
                         }),
                     ..
-                } => {
+                } if state == ElementState::Pressed => {
                     if let Some(keycode) = virtual_keycode {
                         match keycode {
                             VirtualKeyCode::A => {
@@ -106,11 +102,16 @@ impl Window {
                                 render_and_redraw(&platform, &renderer, width, height)
                             }
                             VirtualKeyCode::Up => {
-                                renderer.scale_camera(0.1);
+                                renderer.zoom_camera(0.1);
                                 render_and_redraw(&platform, &renderer, width, height)
                             }
                             VirtualKeyCode::Down => {
-                                renderer.scale_camera(-0.1);
+                                renderer.zoom_camera(-0.1);
+                                render_and_redraw(&platform, &renderer, width, height)
+                            }
+                            //Change shader.
+                            VirtualKeyCode::C => {
+                                renderer.next_shader();
                                 render_and_redraw(&platform, &renderer, width, height)
                             }
                             _ => {}

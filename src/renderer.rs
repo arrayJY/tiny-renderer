@@ -1,4 +1,4 @@
-use pipeline::shader::{Shader, depth_shader::DepthShader};
+use pipeline::shader::{Shader};
 
 use crate::algebra::{matrix::Matrix4f, vector::Vector4f};
 use crate::{
@@ -17,6 +17,8 @@ pub struct Renderer {
     pub rasterizer: Option<Rasterizer>,
     pub width: usize,
     pub height: usize,
+    pub shaders: Vec<Box<dyn Shader>>,
+    pub shader_index: usize,
 }
 
 fn rotate_around_axis(v: &Vector3f, axis: &Vector3f, angle: f32) -> Vector3f {
@@ -33,6 +35,8 @@ impl Renderer {
             rasterizer: None,
             width,
             height,
+            shaders: Vec::new(),
+            shader_index: 0,
         }
     }
 
@@ -43,6 +47,11 @@ impl Renderer {
 
     pub fn camera(mut self, camera: Camera) -> Self {
         self.camera = Some(camera);
+        self
+    }
+
+    pub fn shaders(mut self, shaders: Vec<Box<dyn Shader>>) -> Self {
+        self.shaders = shaders;
         self
     }
 
@@ -85,7 +94,10 @@ impl Renderer {
         let size = width * height;
         let mut frame_buffer_bitmap = Vec::with_capacity(size * 4);
 
-        let frame_buffer = DepthShader::shade(&rasterizer.fragment_buffer);
+        assert!(!self.shaders.is_empty());
+
+        let shader = self.shaders[self.shader_index].as_ref();
+        let frame_buffer = shader.shade(&rasterizer.fragment_buffer);
 
         frame_buffer.iter().rev().for_each(|c| {
             frame_buffer_bitmap.push(c.b);
@@ -95,6 +107,14 @@ impl Renderer {
         });
 
         frame_buffer_bitmap
+    }
+
+    pub fn next_shader(&mut self) {
+        if self.shaders.len() <= self.shader_index + 1 {
+            self.shader_index = 0;
+        } else {
+            self.shader_index += 1;
+        }
     }
 
     pub fn yaw_camera(&mut self, angle: f32) {
@@ -122,7 +142,7 @@ impl Renderer {
         self.camera = Some(new_camera);
     }
 
-    pub fn scale_camera(&mut self, length: f32) {
+    pub fn zoom_camera(&mut self, length: f32) {
         let camera = self.camera.as_ref().unwrap();
         let g = Vector4f::from_vec3f_vector(&camera.gaze_direct);
         let p: Vector4f = Vector4f::from_vec3f_point(&camera.eye_position) + (g * length);
