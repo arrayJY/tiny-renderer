@@ -1,10 +1,11 @@
 use super::rasterizer::FragmentBuffer;
 
 pub mod depth_shader;
+pub mod vertex_shader;
 
 pub trait Shader {
     //From fragments to framebuffer
-    fn shade(fragments: &FragmentBuffer) -> Vec<Color>;
+    fn shade(&self, fragments: &FragmentBuffer) -> Vec<Color>;
 }
 #[derive(Debug, Clone)]
 pub struct Color {
@@ -17,4 +18,23 @@ impl Color {
     pub fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
     }
+}
+
+#[macro_export]
+macro_rules! blend_color {
+    ( $($color: expr), * ) => {
+        {
+            let mut r: f32 = 0.0;
+            let mut g: f32 = 0.0;
+            let mut b: f32 = 0.0;
+            $(
+                let (c, perc) = $color;
+                r += c.r as f32 * perc ;
+                g += c.g as f32 * perc;
+                b += c.b as f32 * perc;
+            )*
+            let (r, g, b) = (r as u8, g as u8, b as u8);
+            Color::rgba(r, g, b, 100u8)
+        }
+    };
 }
