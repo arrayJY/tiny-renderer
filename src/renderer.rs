@@ -1,7 +1,4 @@
-use pipeline::{
-    model::Triangle,
-    shader::{Color, Shader},
-};
+use pipeline::{model::Triangle, rasterizer::FragmentBuffer, shader::Color};
 
 use crate::algebra::{
     matrix::Matrix4f,
@@ -9,8 +6,8 @@ use crate::algebra::{
 };
 use crate::{
     pipeline::{
-        camera::Camera, model::Model, rasterizer::Rasterizer, transformation::Transformation,
-        shader::all_shaders,
+        camera::Camera, model::Model, rasterizer::Rasterizer, shader::all_shaders,
+        transformation::Transformation,
     },
     window::Window,
     *,
@@ -23,7 +20,7 @@ pub struct Renderer {
     pub window: Option<Window>,
     pub width: usize,
     pub height: usize,
-    pub shaders: Vec<Box<dyn Shader>>,
+    pub shaders: Vec<fn(&FragmentBuffer) -> Vec<Color>>,
     pub shader_index: usize,
 }
 
@@ -51,7 +48,7 @@ impl Renderer {
         self
     }
 
-    pub fn shaders(mut self, shaders: Vec<Box<dyn Shader>>) -> Self {
+    pub fn shaders(mut self, shaders: Vec<fn(&FragmentBuffer) -> Vec<Color>>) -> Self {
         self.shaders = shaders;
         self
     }
@@ -72,8 +69,8 @@ impl Renderer {
 
         assert!(!self.shaders.is_empty());
 
-        let shader = self.shaders[self.shader_index].as_ref();
-        let frame_buffer = shader.shade(&rasterizer.fragment_buffer);
+        let shader = self.shaders[self.shader_index];
+        let frame_buffer = shader(&rasterizer.fragment_buffer);
         let bitmap = bitmap_from_framebuffer(&frame_buffer, width, height);
         bitmap
     }

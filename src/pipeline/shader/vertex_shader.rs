@@ -1,22 +1,15 @@
 use super::{Color, Shader};
-use crate::{pipeline::rasterizer::FragmentBuffer};
 use crate::blend_color;
+use crate::pipeline::rasterizer::FragmentBuffer;
 
 #[allow(dead_code)]
 pub struct VertexShader;
 
-impl VertexShader {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-
 impl Shader for VertexShader {
-    fn shade(&self, fragments: &FragmentBuffer) -> Vec<Color> {
-        let c1= Color::rgba(255, 102, 153, 100);
+    fn shade(fragments: &FragmentBuffer) -> Vec<Color> {
+        let c1 = Color::rgba(255, 102, 153, 100);
         let c2 = Color::rgba(103, 153, 255, 100);
-        let c3= Color::rgba(153, 255, 102, 100);
+        let c3 = Color::rgba(153, 255, 102, 100);
         let white = Color::rgba(255, 255, 255, 100);
         fragments
             .barycenter_buffer

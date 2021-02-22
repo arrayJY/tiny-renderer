@@ -9,10 +9,10 @@ use vertex_shader::VertexShader;
 
 pub trait Shader {
     //From fragments to framebuffer
-    fn shade(&self, fragments: &FragmentBuffer) -> Vec<Color>;
+    fn shade(fragments: &FragmentBuffer) -> Vec<Color>;
 }
 
-pub fn all_shaders() -> Vec<Box<dyn Shader>> {
+pub fn all_shaders() -> Vec<fn(&FragmentBuffer) -> Vec<Color>> {
     shaders_builder!(DepthShader, VertexShader)
 }
 
@@ -33,9 +33,9 @@ impl Color {
 macro_rules! shaders_builder {
     ($($shader: tt), *) => {
         {
-            let v: Vec<Box<dyn Shader>> = vec![
+            let v: Vec<fn(&FragmentBuffer) -> Vec<Color>> = vec![
                 $(
-                    Box::new($shader::new()),
+                    $shader::shade,
                 )*
             ];
             v
