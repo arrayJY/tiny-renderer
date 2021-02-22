@@ -1,4 +1,4 @@
-use pipeline::{model::Triangle, rasterizer::FragmentBuffer, shader::Color};
+use pipeline::{model::Triangle, rasterizer::FragmentBuffer};
 
 use crate::algebra::{
     matrix::Matrix4f,
@@ -10,7 +10,7 @@ use crate::{
         transformation::Transformation,
     },
     window::Window,
-    *,
+    Color, *,
 };
 
 #[allow(dead_code)]
@@ -146,22 +146,50 @@ fn triangles_from_models(
 ) -> Vec<Triangle> {
     models
         .iter()
-        .map(|m| {
-            let mut model = m.clone();
-            mvp_viewport_transform(&mut model, camera, width, height);
-            model.triangles()
+        .map(|model| {
+            // mvp_viewport_transform(&mut model, camera, width, height);
+            let mut triangles = model.clone().triangles();
+            mvp_viewport_transform(&mut triangles, camera, width, height);
+            triangles
         })
         .flatten()
         .collect::<Vec<_>>()
 }
 
-fn mvp_viewport_transform(model: &mut Model, camera: &Camera, width: usize, height: usize) {
-    model.transform(&Transformation::view_matrix(camera));
-    model.transform(&Transformation::perspective_projection_transform(camera));
-    model.transform(&Transformation::viewport_transform(
-        width as f32,
-        height as f32,
-    ));
+fn mvp_viewport_transform(
+    triangles: &mut [Triangle],
+    camera: &Camera,
+    width: usize,
+    height: usize,
+) {
+    transform_triangles(triangles, &Transformation::view_matrix(camera));
+    normalize_triangles_vertexs(triangles);
+    transform_triangles(
+        triangles,
+        &Transformation::perspective_projection_transform(camera),
+    );
+    //TODO: Clip
+    normalize_triangles_vertexs(triangles);
+    transform_triangles(
+        triangles,
+        &Transformation::viewport_transform(width as f32, height as f32),
+    );
+}
+
+fn transform_triangles(triangles: &mut [Triangle], transform_matrix: &Matrix4f) {
+    triangles.iter_mut().for_each(|t| {
+        t.vertexs.iter_mut().for_each(|v| {
+            v.position = transform_matrix * &v.position;
+        })
+    })
+}
+
+fn normalize_triangles_vertexs(triangles: &mut [Triangle]) {
+    triangles.iter_mut().for_each(|t| {
+        t.vertexs.iter_mut().for_each(|v| {
+            v.position =  &v.position / v.position.w();
+        })
+    })
 }
 
 fn bitmap_from_framebuffer(frame_buffer: &[Color], width: usize, height: usize) -> Vec<u8> {

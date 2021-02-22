@@ -1,5 +1,6 @@
 use crate::pipeline::rasterizer::FragmentBuffer;
-use super::{Color, Shader};
+use super::{Shader};
+use crate::Color;
 
 #[allow(dead_code)]
 pub struct DepthShader;

@@ -1,6 +1,7 @@
-use super::{Color, Shader};
+use super::{Shader};
 use crate::blend_color;
 use crate::pipeline::rasterizer::FragmentBuffer;
+use crate::Color;
 
 #[allow(dead_code)]
 pub struct VertexShader;
