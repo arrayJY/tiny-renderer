@@ -1,22 +1,25 @@
-use crate::{
-    algebra::{matrix::Matrix4f, vector::Vector4f},
-    *,
-};
+use crate::{algebra::vector::Vector4f, Color, *};
 use std::convert::TryInto;
 use tobj;
+
+#[derive(Debug, Clone)]
+pub struct Vertex {
+    pub position: Vector4f,
+    pub normal: Option<Vector4f>,
+    pub texture_coordinate: Option<(f32, f32)>,
+    pub color: Option<Color>,
+}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Model {
     pub indices: Vec<[u32; 3]>,
-    pub vertexs: Vec<Vector4f>,
-    pub normals: Option<Vec<Vector4f>>,
-    pub texture_coordinates: Option<Vec<(f32, f32)>>,
+    pub vertexs: Vec<Vertex>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Triangle {
-    pub points: Vec<Vector4f>,
+    pub vertexs: Vec<Vertex>,
 }
 
 #[allow(dead_code)]
@@ -25,8 +28,6 @@ impl Model {
         Model {
             indices: Vec::new(),
             vertexs: Vec::new(),
-            normals: None,
-            texture_coordinates: None,
         }
     }
 
@@ -51,7 +52,7 @@ impl Model {
                 }
 
                 //Load vertexs.
-                let vertexs = (0..mesh.positions.len() / 3)
+                let positions = (0..mesh.positions.len() / 3)
                     .map(|i| {
                         let p = &mesh.positions;
                         //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
@@ -61,89 +62,58 @@ impl Model {
 
                 //Load normals.
                 let normals = if mesh.normals.is_empty() {
-                    None
+                    vec![None; mesh.positions.len() / 3]
                 } else {
-                    Some(
-                        (0..mesh.normals.len() / 3)
-                            .map(|i| {
-                                let p = &mesh.positions;
-                                //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
-                                vector4f!(p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 1.0)
-                            })
-                            .collect::<Vec<_>>(),
-                    )
+                    (0..mesh.normals.len() / 3)
+                        .map(|i| {
+                            let p = &mesh.positions;
+                            //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
+                            Some(vector4f!(p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 1.0))
+                        })
+                        .collect::<Vec<_>>()
                 };
 
                 //Load texture_coordinates.
                 let texture_coordinates = if mesh.texcoords.is_empty() {
-                    None
+                    vec![None; mesh.positions.len() / 3]
                 } else {
-                    Some(
-                        (0..mesh.texcoords.len() / 2)
-                            .map(|i| {
-                                let p = &mesh.texcoords;
-                                //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
-                                (p[i * 2], p[i * 2 + 1])
-                            })
-                            .collect::<Vec<_>>(),
-                    )
+                    (0..mesh.texcoords.len() / 2)
+                        .map(|i| {
+                            let p = &mesh.texcoords;
+                            Some((p[i * 2], p[i * 2 + 1]))
+                        })
+                        .collect::<Vec<_>>()
                 };
-                Model {
-                    indices,
-                    vertexs,
-                    normals,
-                    texture_coordinates,
-                }
+
+                let iter = positions
+                    .iter()
+                    .zip(normals.iter())
+                    .zip(texture_coordinates.iter())
+                    .map(|((a, b), c)| (a, b, c));
+
+                let vertexs = iter
+                    .map(|(position, normal, texture_coordinate)| Vertex {
+                        position: position.clone(),
+                        normal: normal.clone(),
+                        texture_coordinate: texture_coordinate.clone(),
+                        color: None,
+                    })
+                    .collect();
+
+                Model { indices, vertexs }
             })
             .collect()
     }
 
-    pub fn indices(&self) -> &Vec<[u32; 3]> {
-        &self.indices
-    }
-    pub fn indices_mut(&mut self) -> &mut Vec<[u32; 3]> {
-        &mut self.indices
-    }
-
-    pub fn vertexs(&self) -> &Vec<Vector4f> {
-        &self.vertexs
-    }
-    pub fn vertexs_mut(&mut self) -> &mut Vec<Vector4f> {
-        &mut self.vertexs
-    }
-
-    pub fn transform(&mut self, transform_matrix: &Matrix4f) {
-        self.vertexs = self
-            .vertexs
-            .iter()
-            .map(|vertex| transform_matrix * vertex)
-            .collect();
-        self.normalize_vertex();
-    }
-
-    pub fn triangles(&self) -> Vec<Triangle> {
-        self.indices()
+    pub fn triangles(self) -> Vec<Triangle> {
+        self.indices
             .iter()
             .map(|index_group| Triangle {
-                points: index_group
+                vertexs: index_group
                     .iter()
                     .map(|&index| &self.vertexs[index as usize])
-                    .map(|vertex| Vector4f::from(vertex))
+                    .map(|vertex| vertex.clone())
                     .collect(),
-            })
-            .collect()
-    }
-
-    pub fn normalize_vertex(&mut self) {
-        self.vertexs = self
-            .vertexs
-            .iter()
-            .map(|vertex| {
-                if vertex.w() != 1.0 {
-                    vertex / vertex.w()
-                } else {
-                    vertex / 1.0
-                }
             })
             .collect()
     }
