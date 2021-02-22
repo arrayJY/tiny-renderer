@@ -66,7 +66,7 @@ impl Model {
                 } else {
                     (0..mesh.normals.len() / 3)
                         .map(|i| {
-                            let p = &mesh.positions;
+                            let p = &mesh.normals;
                             //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
                             Some(vector4f!(p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 1.0))
                         })
@@ -103,6 +103,16 @@ impl Model {
                 Model { indices, vertexs }
             })
             .collect()
+    }
+
+    // Set colors of vertexs.
+    // Colors will be circular used if they are less than vertexs,
+    pub fn colors(mut self, colors: &[Color]) -> Self {
+        self.vertexs
+            .iter_mut()
+            .zip(colors.iter().cycle())
+            .for_each(|(vertex, color)| vertex.color = Some(color.clone()));
+        self
     }
 
     pub fn triangles(self) -> Vec<Triangle> {

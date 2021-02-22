@@ -62,13 +62,16 @@ impl Renderer {
     pub fn render(&self, width: usize, height: usize) -> Vec<u8> {
         let camera = self.camera.as_ref().unwrap();
         let models = self.models.as_ref().unwrap();
+
+        //Transformation
         let triangles = triangles_from_models(models, camera, width, height);
 
+        //Rasterization
         let mut rasterizer = Rasterizer::new(width, height).triangles(triangles);
         rasterizer.rasterize();
 
+        //Shading
         assert!(!self.shaders.is_empty());
-
         let shader = self.shaders[self.shader_index];
         let frame_buffer = shader(&rasterizer.fragment_buffer);
         let bitmap = bitmap_from_framebuffer(&frame_buffer, width, height);
@@ -148,7 +151,12 @@ fn triangles_from_models(
         .iter()
         .map(|model| {
             // mvp_viewport_transform(&mut model, camera, width, height);
-            let mut triangles = model.clone().triangles();
+            let colors = [
+                Color::rgba(255, 0, 0, 100),
+                Color::rgba(0, 255, 0, 100),
+                Color::rgba(0, 0, 255, 100),
+            ];
+            let mut triangles = model.clone().colors(&colors).triangles();
             mvp_viewport_transform(&mut triangles, camera, width, height);
             triangles
         })
@@ -187,7 +195,7 @@ fn transform_triangles(triangles: &mut [Triangle], transform_matrix: &Matrix4f) 
 fn normalize_triangles_vertexs(triangles: &mut [Triangle]) {
     triangles.iter_mut().for_each(|t| {
         t.vertexs.iter_mut().for_each(|v| {
-            v.position =  &v.position / v.position.w();
+            v.position = &v.position / v.position.w();
         })
     })
 }

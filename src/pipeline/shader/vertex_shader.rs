@@ -1,5 +1,4 @@
-use super::{Shader};
-use crate::blend_color;
+use super::Shader;
 use crate::pipeline::rasterizer::FragmentBuffer;
 use crate::Color;
 
@@ -8,20 +7,13 @@ pub struct VertexShader;
 
 impl Shader for VertexShader {
     fn shade(fragments: &FragmentBuffer) -> Vec<Color> {
-        let c1 = Color::rgba(255, 102, 153, 100);
-        let c2 = Color::rgba(103, 153, 255, 100);
-        let c3 = Color::rgba(153, 255, 102, 100);
-        let white = Color::rgba(255, 255, 255, 100);
         fragments
-            .barycenter_buffer
+            .color_buffer
             .iter()
-            .map(|barycenter| {
-                let mut color = white.clone();
-                if let Some(barycenter) = barycenter {
-                    let (alpha, beta, gamma) = *barycenter;
-                    color = blend_color!((&c1, alpha), (&c2, beta), (&c3, gamma))
-                }
+            .map(|color| {
                 color
+                    .clone()
+                    .unwrap_or_else(|| Color::rgba(255, 255, 255, 100))
             })
             .collect()
     }

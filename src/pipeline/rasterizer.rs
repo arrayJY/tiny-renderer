@@ -10,6 +10,7 @@ use super::model::Triangle;
 pub struct FragmentBuffer {
     pub barycenter_buffer: Vec<Option<(f32, f32, f32)>>,
     pub z_buffer: Vec<f32>,
+    pub color_buffer: Vec<Option<Color>>
 }
 
 impl FragmentBuffer {
@@ -17,6 +18,7 @@ impl FragmentBuffer {
         Self {
             barycenter_buffer: vec![None; size],
             z_buffer: vec![f32::MAX; size],
+            color_buffer: vec![None; size]
         }
     }
 }
@@ -48,6 +50,7 @@ impl Rasterizer {
     pub fn rasterize(&mut self) {
         let z_buffer = &mut self.fragment_buffer.z_buffer;
         let barycenter_buffer = &mut self.fragment_buffer.barycenter_buffer;
+        let color_buffer= &mut self.fragment_buffer.color_buffer;
         let width = self.width;
 
         self.triangles.iter().for_each(|triangle| {
@@ -59,8 +62,10 @@ impl Rasterizer {
                     let index = y * width + x;
                     let barycenter = Rasterizer::barycentric_2d(x as f32 + 0.5, y as f32 + 0.5, triangle);
                     let z = -Rasterizer::z_interpolation(triangle, barycenter);
+                    let color = Rasterizer::color_interpolation(triangle, barycenter);
                     if z < z_buffer[index] {
                         barycenter_buffer[index] = Some(barycenter);
+                        color_buffer[index] = color;
                         z_buffer[index] = z;
                     }
                 }
@@ -77,6 +82,17 @@ impl Rasterizer {
             alpha * v0.z() / v0.w() + beta * v1.z() / v1.w() + gamma * v2.z() / v2.w();
         z_interpolated *= w_reciprocal;
         z_interpolated
+    }
+
+    fn color_interpolation(triangle: &Triangle, (alpha, beta, gamma): (f32, f32, f32)) -> Option<Color> {
+        if triangle.vertexs.iter().any(|v| !v.color.is_none() ) {
+            let c1 = triangle.vertexs[0].color.as_ref().unwrap();
+            let c2 = triangle.vertexs[1].color.as_ref().unwrap();
+            let c3 = triangle.vertexs[2].color.as_ref().unwrap();
+            Some(blend_color!((c1, alpha), (c2, beta), (c3, gamma)))
+        } else {
+            None
+        }
     }
 
     fn barycentric_2d(x: f32, y: f32, triangle: &Triangle) -> (f32, f32, f32) {
