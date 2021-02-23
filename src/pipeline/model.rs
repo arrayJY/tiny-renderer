@@ -1,5 +1,5 @@
 use crate::{algebra::vector::Vector4f, Color, *};
-use std::convert::TryInto;
+use std::{collections::HashSet, convert::TryInto};
 use tobj;
 
 #[derive(Debug, Clone)]
@@ -100,7 +100,7 @@ impl Model {
                     })
                     .collect();
 
-                Model { indices, vertexs }
+                Model { indices, vertexs }.default_color()
             })
             .collect()
     }
@@ -108,11 +108,47 @@ impl Model {
     // Set colors of vertexs.
     // Colors will be circular used if they are less than vertexs,
     pub fn colors(mut self, colors: &[Color]) -> Self {
+        // The vertex in the same position may have different attributes when they are sharing
+        // by different surfaces. So vertexs.len() in `Model` >= vertexs in .obj files. 
+        // So we have to find vertexs in the same position, then color they with same color
+        let mut vertex_index_set: HashSet<usize> = HashSet::with_capacity(self.vertexs.len());
+        let mut repeat_vertexs: Vec<Vec<usize>> = vec![Vec::new(); self.vertexs.len()];
         self.vertexs
-            .iter_mut()
-            .zip(colors.iter().cycle())
-            .for_each(|(vertex, color)| vertex.color = Some(color.clone()));
+            .iter()
+            .map(|v| &v.position)
+            .enumerate()
+            .for_each(|(i, p)| {
+                if !vertex_index_set.contains(&i) {
+                    (&self.vertexs[i..]).iter().enumerate().for_each(|(j, v)| {
+                        if &v.position == p {
+                            vertex_index_set.insert(i + j);
+                            repeat_vertexs[i].push(i + j);
+                        }
+                    });
+                }
+            });
+        let repeat_vertexs: Vec<Vec<usize>> = repeat_vertexs
+            .into_iter()
+            .filter(|v| !v.is_empty())
+            .collect();
+        
+        // Color
+        repeat_vertexs.iter()
+        .zip(colors.iter().cycle())
+        .for_each(|(indexs, color)| {
+            indexs.iter().for_each(|&i|{
+                self.vertexs[i].color = Some(color.clone());
+            })
+        });
+
         self
+    }
+
+    pub fn default_color(self) -> Self {
+        let r= Color::rgba(255, 0, 0, 100);
+        let g= Color::rgba(0, 255, 0, 100);
+        let b= Color::rgba(0, 0, 255, 100);
+        self.colors(&vec![r, g, b])
     }
 
     pub fn triangles(self) -> Vec<Triangle> {

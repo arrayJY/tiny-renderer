@@ -150,13 +150,7 @@ fn triangles_from_models(
     models
         .iter()
         .map(|model| {
-            // mvp_viewport_transform(&mut model, camera, width, height);
-            let colors = [
-                Color::rgba(255, 0, 0, 100),
-                Color::rgba(0, 255, 0, 100),
-                Color::rgba(0, 0, 255, 100),
-            ];
-            let mut triangles = model.clone().colors(&colors).triangles();
+            let mut triangles = model.clone().triangles();
             mvp_viewport_transform(&mut triangles, camera, width, height);
             triangles
         })
