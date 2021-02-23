@@ -109,11 +109,6 @@ impl Window {
                                 renderer.zoom_camera(-0.1);
                                 render_and_redraw(&platform, &renderer, width, height)
                             }
-                            //Change shader.
-                            VirtualKeyCode::C => {
-                                renderer.next_shader();
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
                             _ => {}
                         }
                     }

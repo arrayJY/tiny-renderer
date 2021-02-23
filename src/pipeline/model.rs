@@ -109,7 +109,7 @@ impl Model {
     // Colors will be circular used if they are less than vertexs,
     pub fn colors(mut self, colors: &[Color]) -> Self {
         // The vertex in the same position may have different attributes when they are sharing
-        // by different surfaces. So vertexs.len() in `Model` >= vertexs in .obj files. 
+        // by different surfaces. So vertexs.len() in `Model` >= vertexs in .obj files.
         // So we have to find vertexs in the same position, then color they with same color
         let mut vertex_index_set: HashSet<usize> = HashSet::with_capacity(self.vertexs.len());
         let mut repeat_vertexs: Vec<Vec<usize>> = vec![Vec::new(); self.vertexs.len()];
@@ -131,23 +131,24 @@ impl Model {
             .into_iter()
             .filter(|v| !v.is_empty())
             .collect();
-        
+
         // Color
-        repeat_vertexs.iter()
-        .zip(colors.iter().cycle())
-        .for_each(|(indexs, color)| {
-            indexs.iter().for_each(|&i|{
-                self.vertexs[i].color = Some(color.clone());
-            })
-        });
+        repeat_vertexs
+            .iter()
+            .zip(colors.iter().cycle())
+            .for_each(|(indexs, color)| {
+                indexs.iter().for_each(|&i| {
+                    self.vertexs[i].color = Some(color.clone());
+                })
+            });
 
         self
     }
 
     pub fn default_color(self) -> Self {
-        let r= Color::rgba(255, 0, 0, 100);
-        let g= Color::rgba(0, 255, 0, 100);
-        let b= Color::rgba(0, 0, 255, 100);
+        let r = Color::rgba(255, 0, 0, 100);
+        let g = Color::rgba(0, 255, 0, 100);
+        let b = Color::rgba(0, 0, 255, 100);
         self.colors(&vec![r, g, b])
     }
 

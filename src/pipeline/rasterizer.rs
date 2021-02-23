@@ -28,9 +28,9 @@ impl Rasterizer {
         self
     }
 
-    pub fn rasterize(&mut self, shader: &ShaderFunc) -> Vec<Option<Color>>{
+    pub fn rasterize(&mut self, shader: &ShaderFunc) -> Vec<Option<Color>> {
         let z_buffer = &mut self.z_buffer;
-        let mut frame_buffer = vec! [None; self.height * self.width];
+        let mut frame_buffer = vec![None; self.height * self.width];
         let width = self.width;
 
         self.triangles.iter().for_each(|triangle| {

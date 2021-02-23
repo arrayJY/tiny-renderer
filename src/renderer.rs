@@ -6,10 +6,7 @@ use crate::algebra::{
 };
 use crate::{
     pipeline::{
-        camera::Camera,
-        fragment_shader::{all_shaders, ShaderFunc},
-        model::Model,
-        rasterizer::Rasterizer,
+        camera::Camera, fragment_shader::ShaderFunc, model::Model, rasterizer::Rasterizer,
         transformation::Transformation,
     },
     window::Window,
@@ -22,9 +19,8 @@ pub struct Renderer {
     pub camera: Option<Camera>,
     pub window: Option<Window>,
     pub width: usize,
+    pub shader: Option<ShaderFunc>,
     pub height: usize,
-    pub shaders: Vec<fn() -> ShaderFunc>,
-    pub shader_index: usize,
 }
 
 #[allow(dead_code)]
@@ -34,10 +30,9 @@ impl Renderer {
             models: None,
             camera: None,
             window: None,
+            shader: None,
             width,
             height,
-            shaders: Vec::new(),
-            shader_index: 0,
         }
     }
 
@@ -46,13 +41,13 @@ impl Renderer {
         self
     }
 
-    pub fn camera(mut self, camera: Camera) -> Self {
-        self.camera = Some(camera);
+    pub fn shader(mut self, shader: ShaderFunc) -> Self {
+        self.shader = Some(shader);
         self
     }
 
-    pub fn shaders(mut self, shaders: Vec<fn() -> ShaderFunc>) -> Self {
-        self.shaders = shaders;
+    pub fn camera(mut self, camera: Camera) -> Self {
+        self.camera = Some(camera);
         self
     }
 
@@ -65,26 +60,18 @@ impl Renderer {
     pub fn render(&self, width: usize, height: usize) -> Vec<u8> {
         let camera = self.camera.as_ref().unwrap();
         let models = self.models.as_ref().unwrap();
+        let shader = self.shader.as_ref().unwrap();
 
         //Transformation
         let triangles = triangles_from_models(models, camera, width, height);
 
         //Rasterization && Shading
         let mut rasterizer = Rasterizer::new(width, height).triangles(triangles);
-        let shader = self.shaders[self.shader_index]();
-        let frame_buffer = rasterizer.rasterize(&shader);
+        let frame_buffer = rasterizer.rasterize(shader);
 
         //Generate Bitmap
         let bitmap = bitmap_from_framebuffer(&frame_buffer, width, height);
         bitmap
-    }
-
-    pub fn next_shader(&mut self) {
-        if self.shaders.len() <= self.shader_index + 1 {
-            self.shader_index = 0;
-        } else {
-            self.shader_index += 1;
-        }
     }
 
     pub fn yaw_camera(&mut self, angle: f32) {
@@ -128,10 +115,9 @@ impl Default for Renderer {
             models: None,
             camera: Some(Camera::default()),
             window: None,
+            shader: None,
             width: 800,
             height: 800,
-            shaders: all_shaders(),
-            shader_index: 0,
         }
     }
 }
