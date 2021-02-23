@@ -69,14 +69,12 @@ impl Renderer {
         //Transformation
         let triangles = triangles_from_models(models, camera, width, height);
 
-        //Rasterization
+        //Rasterization && Shading
         let mut rasterizer = Rasterizer::new(width, height).triangles(triangles);
         let shader = self.shaders[self.shader_index]();
         let frame_buffer = rasterizer.rasterize(&shader);
 
-        //Shading
-        assert!(!self.shaders.is_empty());
-        //let frame_buffer = shader(&rasterizer.);
+        //Generate Bitmap
         let bitmap = bitmap_from_framebuffer(&frame_buffer, width, height);
         bitmap
     }
@@ -153,32 +151,50 @@ fn triangles_from_models(
     models
         .iter()
         .map(|model| {
-            let mut triangles = model.clone().triangles();
-            mvp_viewport_transform(&mut triangles, camera, width, height);
-            triangles
+            let triangles = model.clone().triangles();
+            mvp_viewport_transform(triangles, camera, width, height)
         })
         .flatten()
         .collect::<Vec<_>>()
 }
 
 fn mvp_viewport_transform(
-    triangles: &mut [Triangle],
+    mut triangles: Vec<Triangle>,
     camera: &Camera,
     width: usize,
     height: usize,
-) {
-    transform_triangles(triangles, &Transformation::view_matrix(camera));
-    normalize_triangles_vertexs(triangles);
+) -> Vec<Triangle> {
+    transform_triangles(&mut triangles, &Transformation::view_matrix(camera));
+    normalize_triangles_vertexs(&mut triangles);
     transform_triangles(
-        triangles,
+        &mut triangles,
         &Transformation::perspective_projection_transform(camera),
     );
-    //TODO: Clip
-    normalize_triangles_vertexs(triangles);
+    triangles = homogeneous_clip(triangles, camera);
+    normalize_triangles_vertexs(&mut triangles);
     transform_triangles(
-        triangles,
+        &mut triangles,
         &Transformation::viewport_transform(width as f32, height as f32),
     );
+    triangles
+}
+
+// Simple clip
+fn homogeneous_clip(triangles: Vec<Triangle>, camera: &Camera) -> Vec<Triangle> {
+    triangles
+        .into_iter()
+        .filter(|t| {
+            !t.vertexs.iter().any(|v| {
+                let x = v.position.x();
+                let y = v.position.y();
+                let z = v.position.z();
+                let w = v.position.w();
+                let n = -camera.near;
+                let f = -camera.far;
+                (x < w || x > -w) || (y < w || y > -w) || (z < w || z > -w) || (n < w || w < f)
+            })
+        })
+        .collect()
 }
 
 fn transform_triangles(triangles: &mut [Triangle], transform_matrix: &Matrix4f) {
