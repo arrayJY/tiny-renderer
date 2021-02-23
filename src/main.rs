@@ -12,6 +12,6 @@ fn main() {
     let shader = make_shader(shader_name, path);
     Renderer::default()
         .models(Model::from_obj(&model_path))
-        .shader(shader.unwrap().shader())
+        .shader(shader.unwrap())
         .run();
 }

@@ -1,12 +1,12 @@
 use pipeline::model::Triangle;
 
-use crate::algebra::{
+use crate::{algebra::{
     matrix::Matrix4f,
     vector::{Vector3f, Vector4f},
-};
+}, pipeline::fragment_shader::FragmentShader};
 use crate::{
     pipeline::{
-        camera::Camera, fragment_shader::ShaderFunc, model::Model, rasterizer::Rasterizer,
+        camera::Camera, model::Model, rasterizer::Rasterizer,
         transformation::Transformation,
     },
     window::Window,
@@ -19,7 +19,7 @@ pub struct Renderer {
     pub camera: Option<Camera>,
     pub window: Option<Window>,
     pub width: usize,
-    pub shader: Option<ShaderFunc>,
+    pub shader: Option<Box<dyn FragmentShader>>,
     pub height: usize,
 }
 
@@ -41,7 +41,7 @@ impl Renderer {
         self
     }
 
-    pub fn shader(mut self, shader: ShaderFunc) -> Self {
+    pub fn shader(mut self, shader: Box<dyn FragmentShader>) -> Self {
         self.shader = Some(shader);
         self
     }

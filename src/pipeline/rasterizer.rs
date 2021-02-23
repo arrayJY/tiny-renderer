@@ -1,5 +1,4 @@
-use super::fragment_shader::ShaderFunc;
-use super::model::Triangle;
+use super::{fragment_shader::FragmentShader, model::Triangle};
 use crate::*;
 use algebra::vector::Vector3f;
 use core::f32;
@@ -28,7 +27,7 @@ impl Rasterizer {
         self
     }
 
-    pub fn rasterize(&mut self, shader: &ShaderFunc) -> Vec<Option<Color>> {
+    pub fn rasterize(&mut self, shader: &Box<dyn FragmentShader>) -> Vec<Option<Color>> {
         let z_buffer = &mut self.z_buffer;
         let mut frame_buffer = vec![None; self.height * self.width];
         let width = self.width;
@@ -41,10 +40,10 @@ impl Rasterizer {
                 if Rasterizer::inside_triangle((x, y), triangle) {
                     let index = y * width + x;
                     let barycenter =
-                        Rasterizer::barycentric_2d(x as f32 + 0.5, y as f32 + 0.5, triangle);
+                        Rasterizer::barycentric_2d(x as f32, y as f32, triangle);
                     let z = -Rasterizer::z_interpolation(triangle, barycenter);
                     if z < z_buffer[index] {
-                        let color = shader(triangle, barycenter, z);
+                        let color = shader.shade(triangle, barycenter, z);
                         frame_buffer[index] = Some(color);
                         z_buffer[index] = z;
                     }

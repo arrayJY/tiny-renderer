@@ -14,8 +14,9 @@ cargo run --release [shader] [path]
 Available shaders:
 - `z`:  Depth shader
 - `color`: Color shader.
+- `texture`: Texture mapping shader.
 
-`path` is the the path **without extension** to `.obj/.mtl` and texture files. 
+`path` is the the path **without extension** to `.obj/.mtl` and texture image(`.jpg/.png`) file. 
 It means they should be in same directory.
 
 For example, you can run just like:
@@ -24,12 +25,10 @@ cargo run --release color static/cube
 ```
 It will run the renderer with `static/cube.obj` and `static/cube.mtl`.
 
-
 There are some simple models in `static` directory.
 - `cube`
 - `cone`
 - `multi_models`
-
 
 Don't forget `--release` flag because of its poor performance.
 

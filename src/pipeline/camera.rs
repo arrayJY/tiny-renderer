@@ -64,7 +64,7 @@ impl Default for Camera {
             eye_position: vector3f!(3.0, 3.0, 3.0),
             eye_fov: PI / 2.0,
             aspect_ratio: 1.0,
-            near: 1.5,
+            near: 1.0,
             far: 50.0,
         }
     }

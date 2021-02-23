@@ -1,10 +1,11 @@
-use super::{FragmentShader, ShaderFunc};
-use crate::Color;
+use super::FragmentShader;
+use crate::{pipeline::model::Triangle, Color};
 
 pub struct ZShader;
 
+#[allow(unused_variables)]
 impl FragmentShader for ZShader {
-    fn shader(&self) -> ShaderFunc {
-        Box::new(|_, _, z| &Color::rgb(255, 255, 255) * z)
+    fn shade(&self, triangle: &Triangle, barycenter: (f32, f32, f32), z: f32) -> Color {
+        &Color::rgb(255, 255, 255) * z
     }
 }
