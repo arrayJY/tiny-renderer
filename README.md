@@ -29,6 +29,7 @@ There are some simple models in `static` directory.
 - `cube`
 - `cone`
 - `multi_models`
+- `earth`
 
 Don't forget `--release` flag because of its poor performance.
 
