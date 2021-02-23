@@ -1,4 +1,4 @@
-use pipeline::{model::Triangle, rasterizer::FragmentBuffer};
+use pipeline::model::Triangle;
 
 use crate::algebra::{
     matrix::Matrix4f,
@@ -6,7 +6,10 @@ use crate::algebra::{
 };
 use crate::{
     pipeline::{
-        camera::Camera, model::Model, rasterizer::Rasterizer, shader::all_shaders,
+        camera::Camera,
+        fragment_shader::{all_shaders, ShaderFunc},
+        model::Model,
+        rasterizer::Rasterizer,
         transformation::Transformation,
     },
     window::Window,
@@ -20,7 +23,7 @@ pub struct Renderer {
     pub window: Option<Window>,
     pub width: usize,
     pub height: usize,
-    pub shaders: Vec<fn(&FragmentBuffer) -> Vec<Color>>,
+    pub shaders: Vec<fn() -> ShaderFunc>,
     pub shader_index: usize,
 }
 
@@ -48,7 +51,7 @@ impl Renderer {
         self
     }
 
-    pub fn shaders(mut self, shaders: Vec<fn(&FragmentBuffer) -> Vec<Color>>) -> Self {
+    pub fn shaders(mut self, shaders: Vec<fn() -> ShaderFunc>) -> Self {
         self.shaders = shaders;
         self
     }
@@ -68,12 +71,12 @@ impl Renderer {
 
         //Rasterization
         let mut rasterizer = Rasterizer::new(width, height).triangles(triangles);
-        rasterizer.rasterize();
+        let shader = self.shaders[self.shader_index]();
+        let frame_buffer = rasterizer.rasterize(&shader);
 
         //Shading
         assert!(!self.shaders.is_empty());
-        let shader = self.shaders[self.shader_index];
-        let frame_buffer = shader(&rasterizer.fragment_buffer);
+        //let frame_buffer = shader(&rasterizer.);
         let bitmap = bitmap_from_framebuffer(&frame_buffer, width, height);
         bitmap
     }
@@ -194,8 +197,10 @@ fn normalize_triangles_vertexs(triangles: &mut [Triangle]) {
     })
 }
 
-fn bitmap_from_framebuffer(frame_buffer: &[Color], width: usize, height: usize) -> Vec<u8> {
+fn bitmap_from_framebuffer(frame_buffer: &[Option<Color>], width: usize, height: usize) -> Vec<u8> {
     let mut frame_buffer_bitmap = Vec::with_capacity(width * height * 4);
+    //Background
+    let background = [255u8, 255, 255, 100];
     frame_buffer
         .iter()
         .enumerate()
@@ -204,10 +209,16 @@ fn bitmap_from_framebuffer(frame_buffer: &[Color], width: usize, height: usize) 
         .map(|(i, ..)| &frame_buffer[i..i + width])
         .for_each(|line| {
             line.iter().for_each(|c| {
-                frame_buffer_bitmap.push(c.b);
-                frame_buffer_bitmap.push(c.g);
-                frame_buffer_bitmap.push(c.r);
-                frame_buffer_bitmap.push(c.a);
+                if let Some(c) = c {
+                    frame_buffer_bitmap.push(c.b);
+                    frame_buffer_bitmap.push(c.g);
+                    frame_buffer_bitmap.push(c.r);
+                    frame_buffer_bitmap.push(c.a);
+                } else {
+                    background.iter().for_each(|&c| {
+                        frame_buffer_bitmap.push(c);
+                    })
+                }
             })
         });
 

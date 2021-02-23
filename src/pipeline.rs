@@ -2,4 +2,4 @@ pub mod transformation;
 pub mod model;
 pub mod camera;
 pub mod rasterizer;
-pub mod shader;
+pub mod fragment_shader;
