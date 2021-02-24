@@ -5,6 +5,7 @@ use tobj;
 #[derive(Debug, Clone)]
 pub struct Vertex {
     pub position: Vector4f,
+    pub world_position: Option<Vector4f>,
     pub normal: Option<Vector4f>,
     pub texture_coordinate: Option<(f32, f32)>,
     pub color: Option<Color>,
@@ -94,6 +95,7 @@ impl Model {
                 let vertexs = iter
                     .map(|(position, normal, texture_coordinate)| Vertex {
                         position: position.clone(),
+                        world_position: None,
                         normal: normal.clone(),
                         texture_coordinate: texture_coordinate.clone(),
                         color: None,

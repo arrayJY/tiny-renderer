@@ -156,14 +156,22 @@ fn mvp_viewport_transform(
     height: usize,
 ) -> Vec<Triangle> {
     // No modeling transformation for now
-    // let modeling =
     let view = Transformation::view_matrix(camera);
     let inverse_transpose = Matrix3f::from(&view).inverse_matrix().transpose();
     let inverse_transpose = Matrix4f::from_samll(&inverse_transpose);
     let projection = Transformation::perspective_projection_transform(camera);
     let viewport = Transformation::viewport_transform(width as f32, height as f32);
 
-    transform_triangles_vertexs(&mut triangles, &(projection * view));
+    transform_triangles_vertexs(&mut triangles, &view);
+
+    //Reserve positions in world space for fragment shader.
+    triangles.iter_mut().for_each(|t| {
+        t.vertexs.iter_mut().for_each(|v| {
+            v.world_position = Some(v.position.clone())
+        });
+    });
+
+    transform_triangles_vertexs(&mut triangles, &projection);
     transform_triangles_normal(&mut triangles, &inverse_transpose);
 
     triangles = homogeneous_clip(triangles, camera);
