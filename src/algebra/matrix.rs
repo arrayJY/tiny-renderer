@@ -15,7 +15,7 @@ use std::{
     iter::Sum,
     ops::{AddAssign, Neg},
 };
-use typenum::{IsEqual, True};
+use typenum::{IsEqual, IsLessOrEqual, True};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Matrix<T, Row, Col>
@@ -118,6 +118,22 @@ where
         let rows = self.rows();
         let cols = self.cols();
         (0..rows).flat_map(move |a| (0..cols).map(move |b| (a, b)))
+    }
+
+    pub fn from_samll<R, C>(other: &Matrix<T, R, C>) -> Self
+    where
+        T: Copy,
+        R: Unsigned + Mul<C> + IsLessOrEqual<Row, Output = True>,
+        C: Unsigned + IsLessOrEqual<Col, Output = True>,
+        Prod<R, C>: ArrayLength<T>,
+    {
+        let mut m = Self::new();
+        for i in 0..other.rows() {
+            for j in 0..other.cols() {
+                m[i][j] = other[i][j];
+            }
+        }
+        m
     }
 }
 

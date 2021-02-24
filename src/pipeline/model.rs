@@ -67,8 +67,8 @@ impl Model {
                     (0..mesh.normals.len() / 3)
                         .map(|i| {
                             let p = &mesh.normals;
-                            //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
-                            Some(vector4f!(p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 1.0))
+                            //Vector homogeneous coordinates: (x, y, z) -> (x, y, z, 0.0)
+                            Some(vector4f!(p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 0.0))
                         })
                         .collect::<Vec<_>>()
                 };

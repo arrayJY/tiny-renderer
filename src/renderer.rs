@@ -1,13 +1,15 @@
 use pipeline::model::Triangle;
 
-use crate::{algebra::{
-    matrix::Matrix4f,
-    vector::{Vector3f, Vector4f},
-}, pipeline::fragment_shader::FragmentShader};
+use crate::{
+    algebra::{
+        matrix::{Matrix3f, Matrix4f},
+        vector::{Vector3f, Vector4f},
+    },
+    pipeline::{fragment_shader::FragmentShader, light::Light},
+};
 use crate::{
     pipeline::{
-        camera::Camera, model::Model, rasterizer::Rasterizer,
-        transformation::Transformation,
+        camera::Camera, model::Model, rasterizer::Rasterizer, transformation::Transformation,
     },
     window::Window,
     Color, *,
@@ -21,6 +23,7 @@ pub struct Renderer {
     pub width: usize,
     pub shader: Option<Box<dyn FragmentShader>>,
     pub height: usize,
+    pub light: Option<Light>,
 }
 
 #[allow(dead_code)]
@@ -31,6 +34,7 @@ impl Renderer {
             camera: None,
             window: None,
             shader: None,
+            light: None,
             width,
             height,
         }
@@ -60,14 +64,14 @@ impl Renderer {
     pub fn render(&self, width: usize, height: usize) -> Vec<u8> {
         let camera = self.camera.as_ref().unwrap();
         let models = self.models.as_ref().unwrap();
-        let shader = self.shader.as_ref().unwrap();
+        let fragment_shader = self.shader.as_ref().unwrap();
 
         //Transformation
         let triangles = triangles_from_models(models, camera, width, height);
 
         //Rasterization && Shading
         let mut rasterizer = Rasterizer::new(width, height).triangles(triangles);
-        let frame_buffer = rasterizer.rasterize(shader);
+        let frame_buffer = rasterizer.rasterize(fragment_shader);
 
         //Generate Bitmap
         let bitmap = bitmap_from_framebuffer(&frame_buffer, width, height);
@@ -116,6 +120,7 @@ impl Default for Renderer {
             camera: Some(Camera::default()),
             window: None,
             shader: None,
+            light: Some(Light::default()),
             width: 800,
             height: 800,
         }
@@ -150,18 +155,21 @@ fn mvp_viewport_transform(
     width: usize,
     height: usize,
 ) -> Vec<Triangle> {
-    transform_triangles(&mut triangles, &Transformation::view_matrix(camera));
-    normalize_triangles_vertexs(&mut triangles);
-    transform_triangles(
-        &mut triangles,
-        &Transformation::perspective_projection_transform(camera),
-    );
+    // No modeling transformation for now
+    // let modeling =
+    let view = Transformation::view_matrix(camera);
+    let inverse_transpose = Matrix3f::from(&view).inverse_matrix().transpose();
+    let inverse_transpose = Matrix4f::from_samll(&inverse_transpose);
+    let projection = Transformation::perspective_projection_transform(camera);
+    let viewport = Transformation::viewport_transform(width as f32, height as f32);
+
+    transform_triangles_vertexs(&mut triangles, &(projection * view));
+    transform_triangles_normal(&mut triangles, &inverse_transpose);
+
     triangles = homogeneous_clip(triangles, camera);
-    normalize_triangles_vertexs(&mut triangles);
-    transform_triangles(
-        &mut triangles,
-        &Transformation::viewport_transform(width as f32, height as f32),
-    );
+
+    transform_triangles_vertexs(&mut triangles, &viewport);
+    homogeneous_division(&mut triangles);
     triangles
 }
 
@@ -183,7 +191,7 @@ fn homogeneous_clip(triangles: Vec<Triangle>, camera: &Camera) -> Vec<Triangle> 
         .collect()
 }
 
-fn transform_triangles(triangles: &mut [Triangle], transform_matrix: &Matrix4f) {
+fn transform_triangles_vertexs(triangles: &mut [Triangle], transform_matrix: &Matrix4f) {
     triangles.iter_mut().for_each(|t| {
         t.vertexs.iter_mut().for_each(|v| {
             v.position = transform_matrix * &v.position;
@@ -191,7 +199,17 @@ fn transform_triangles(triangles: &mut [Triangle], transform_matrix: &Matrix4f) 
     })
 }
 
-fn normalize_triangles_vertexs(triangles: &mut [Triangle]) {
+fn transform_triangles_normal(triangles: &mut [Triangle], transform_matrix: &Matrix4f) {
+    triangles.iter_mut().for_each(|t| {
+        t.vertexs.iter_mut().for_each(|v| {
+            if let Some(normal) = &v.normal {
+                v.normal = Some(transform_matrix * normal);
+            }
+        })
+    })
+}
+
+fn homogeneous_division(triangles: &mut [Triangle]) {
     triangles.iter_mut().for_each(|t| {
         t.vertexs.iter_mut().for_each(|v| {
             v.position = &v.position / v.position.w();
