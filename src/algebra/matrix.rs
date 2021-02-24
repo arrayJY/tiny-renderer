@@ -6,9 +6,15 @@ pub mod transform;
 use generic_array::typenum::{Prod, Unsigned};
 use generic_array::typenum::{U1, U2, U3, U4};
 use generic_array::{ArrayLength, GenericArray};
-use std::iter::Sum;
-use std::ops::{Mul, Sub};
 use std::usize;
+use std::{
+    fmt::Debug,
+    ops::{Mul, Sub},
+};
+use std::{
+    iter::Sum,
+    ops::{AddAssign, Neg},
+};
 use typenum::{IsEqual, True};
 
 #[derive(Debug, PartialEq, Clone)]
@@ -144,6 +150,90 @@ where
         m[1][0] = self[2][0] * rhs[0][0] - self[0][0] * rhs[2][0];
         m[2][0] = self[0][0] * rhs[1][0] - self[1][0] * rhs[0][0];
         m
+    }
+}
+
+impl<T, Row, Col> Matrix<T, Row, Col>
+where
+    T: Default + Copy + Clone + Mul<Output = T> + Sub<Output = T> + Neg<Output = T> + AddAssign,
+    Row: Unsigned + Mul<Col>,
+    Col: Unsigned,
+    Prod<Row, Col>: ArrayLength<T>,
+{
+    pub fn inverse_matrix(&self) -> Matrix<T, Col, Row>
+    where
+        Col: Mul<Row>,
+        T: Into<f32> + From<f32>,
+        Prod<Col, Row>: ArrayLength<T>,
+    {
+        let det = self.determinant();
+        self.cofactor_matrix().transpose() * T::from(1.0 / det.into())
+    }
+
+    pub fn cofactor_matrix(&self) -> Self {
+        Self {
+            data: self
+                .data
+                .iter()
+                .enumerate()
+                .map(|(i, _)| {
+                    let minor = Self::minor_iter(self.data.iter(), i, self.cols());
+                    let det = Self::determinant_iter(minor, self.rows() - 1);
+                    if i % 2 == 0 {
+                        det
+                    } else {
+                        -det
+                    }
+                })
+                .collect(),
+        }
+    }
+
+    pub fn determinant(&self) -> T {
+        Self::determinant_iter(self.data.iter(), self.rows())
+    }
+
+    fn minor_iter<'a>(
+        iter: impl Iterator<Item = &'a T>,
+        i: usize,
+        cols: usize,
+    ) -> impl Iterator<Item = &'a T>
+    where
+        T: 'a,
+    {
+        iter.enumerate().filter_map(move |(idx, v)| {
+            if idx / cols != i / cols && idx % cols != i % cols {
+                Some(v)
+            } else {
+                None
+            }
+        })
+    }
+
+    fn determinant_iter<'a>(mut iter: impl Iterator<Item = &'a T>, size: usize) -> T
+    where
+        T: 'a,
+    {
+        if size == 1 {
+            iter.next().unwrap().clone()
+        } else if size == 2 {
+            let a = iter.next().unwrap().clone();
+            let b = iter.next().unwrap().clone();
+            let c = iter.next().unwrap().clone();
+            let d = iter.next().unwrap().clone();
+            a * d - b * c
+        } else {
+            let tmp = iter.cloned().collect::<Vec<_>>();
+            (0..size)
+                .map(|i| Self::minor_iter(tmp.iter(), i, size))
+                .zip(&tmp[0..size])
+                .map(|(iter, v)| v.clone() * Self::determinant_iter(iter, size - 1))
+                .enumerate()
+                .fold(T::default(), |mut det, (i, x)| {
+                    det += if i % 2 == 0 { x } else { -x };
+                    det
+                })
+        }
     }
 }
 
