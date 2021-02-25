@@ -2,10 +2,13 @@ use pipeline::model::Triangle;
 
 use crate::{
     algebra::{
-        matrix::{Matrix3f, Matrix4f},
+        matrix::Matrix4f,
         vector::{Vector3f, Vector4f},
     },
-    pipeline::{fragment_shader::FragmentShader, light::Light},
+    pipeline::{
+        fragment_shader::{make_shader, FragmentShader},
+        light::Light,
+    },
 };
 use crate::{
     pipeline::{
@@ -45,8 +48,9 @@ impl Renderer {
         self
     }
 
-    pub fn shader(mut self, shader: Box<dyn FragmentShader>) -> Self {
-        self.shader = Some(shader);
+    pub fn shader(mut self, name: &str, path: &str) -> Self {
+        let shader = make_shader(name, path, &self);
+        self.shader = shader;
         self
     }
 
@@ -89,17 +93,18 @@ impl Renderer {
         let u = rotate_around_axis(&camera.up_direct, &y_axis, angle);
 
         let new_camera = camera.clone().eye_position(p).gaze_direct(g).up_direct(u);
+        self.shader.as_mut().unwrap().update_camera(&new_camera);
         self.camera = Some(new_camera);
     }
 
     pub fn pitch_camera(&mut self, angle: f32) {
         let camera = self.camera.as_ref().unwrap();
-        let mut axis = camera.up_direct.cross(&camera.gaze_direct);
-        axis.normalize();
+        let axis = camera.up_direct.cross(&camera.gaze_direct).normalized();
         let e = rotate_around_axis(&camera.eye_position, &axis, angle);
         let g = rotate_around_axis(&camera.gaze_direct, &axis, angle);
         let u = rotate_around_axis(&camera.up_direct, &axis, angle);
         let new_camera = camera.clone().eye_position(e).gaze_direct(g).up_direct(u);
+        self.shader.as_mut().unwrap().update_camera(&new_camera);
         self.camera = Some(new_camera);
     }
 
@@ -157,22 +162,11 @@ fn mvp_viewport_transform(
 ) -> Vec<Triangle> {
     // No modeling transformation for now
     let view = Transformation::view_matrix(camera);
-    let inverse_transpose = Matrix3f::from(&view).inverse_matrix().transpose();
-    let inverse_transpose = Matrix4f::from_samll(&inverse_transpose);
     let projection = Transformation::perspective_projection_transform(camera);
     let viewport = Transformation::viewport_transform(width as f32, height as f32);
 
     transform_triangles_vertexs(&mut triangles, &view);
-
-    //Reserve positions in world space for fragment shader.
-    triangles.iter_mut().for_each(|t| {
-        t.vertexs.iter_mut().for_each(|v| {
-            v.world_position = Some(v.position.clone())
-        });
-    });
-
     transform_triangles_vertexs(&mut triangles, &projection);
-    transform_triangles_normal(&mut triangles, &inverse_transpose);
 
     triangles = homogeneous_clip(triangles, camera);
 
@@ -203,16 +197,6 @@ fn transform_triangles_vertexs(triangles: &mut [Triangle], transform_matrix: &Ma
     triangles.iter_mut().for_each(|t| {
         t.vertexs.iter_mut().for_each(|v| {
             v.position = transform_matrix * &v.position;
-        })
-    })
-}
-
-fn transform_triangles_normal(triangles: &mut [Triangle], transform_matrix: &Matrix4f) {
-    triangles.iter_mut().for_each(|t| {
-        t.vertexs.iter_mut().for_each(|v| {
-            if let Some(normal) = &v.normal {
-                v.normal = Some(transform_matrix * normal);
-            }
         })
     })
 }

@@ -95,7 +95,8 @@ impl Model {
                 let vertexs = iter
                     .map(|(position, normal, texture_coordinate)| Vertex {
                         position: position.clone(),
-                        world_position: None,
+                        //Reserve positions in world space for fragment shader.
+                        world_position: Some(position.clone()),
                         normal: normal.clone(),
                         texture_coordinate: texture_coordinate.clone(),
                         color: None,

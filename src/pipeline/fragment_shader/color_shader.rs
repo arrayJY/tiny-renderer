@@ -1,12 +1,11 @@
 use super::FragmentShader;
-use crate::pipeline::model::Triangle;
+use crate::pipeline::{camera::Camera, light::Light, model::Triangle};
 use crate::Color;
 
 pub struct ColorShader;
 
-#[allow(unused_variables)]
 impl FragmentShader for ColorShader {
-    fn shade(&self, triangle: &Triangle, (alpha, beta, gamma): (f32, f32, f32), z: f32) -> Color {
+    fn shade(&self, triangle: &Triangle, (alpha, beta, gamma): (f32, f32, f32), _: f32) -> Color {
         if triangle.vertexs.iter().any(|v| v.color.is_none()) {
             Color::rgb(255, 255, 255)
         } else {
@@ -16,4 +15,6 @@ impl FragmentShader for ColorShader {
             c0 * alpha + c1 * beta + c2 * gamma
         }
     }
+    fn update_camera(&mut self, _: &Camera) {}
+    fn update_light(&mut self, _: &Light) {}
 }

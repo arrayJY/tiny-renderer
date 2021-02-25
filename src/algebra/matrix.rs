@@ -135,6 +135,20 @@ where
         }
         m
     }
+
+    pub fn cwise_product(&self, other: &Self) -> Self
+    where
+        T: Copy + Mul<Output = T>,
+    {
+        Self {
+            data: self
+                .data
+                .iter()
+                .zip(other.data.iter())
+                .map(|(&a, &b)| a * b)
+                .collect(),
+        }
+    }
 }
 
 impl<T, Row, Col> Matrix<T, Row, Col>

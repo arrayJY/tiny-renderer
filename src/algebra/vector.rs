@@ -130,6 +130,11 @@ where
             *v = *v / norm;
         })
     }
+
+    pub fn normalized(mut self) -> Self {
+        self.normalize();
+        self
+    }
 }
 
 impl<T, N> Neg for Vector<T, N>

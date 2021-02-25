@@ -1,6 +1,9 @@
 use super::FragmentShader;
 use crate::pipeline::{model::Triangle, texture::Texture};
-use crate::Color;
+use crate::{
+    pipeline::{camera::Camera, light::Light},
+    Color,
+};
 
 pub struct TextureShader {
     texture: Texture,
@@ -22,9 +25,8 @@ impl TextureShader {
     }
 }
 
-#[allow(unused_variables)]
 impl FragmentShader for TextureShader {
-    fn shade(&self, triangle: &Triangle, (alpha, beta, gamma): (f32, f32, f32), z: f32) -> Color {
+    fn shade(&self, triangle: &Triangle, (alpha, beta, gamma): (f32, f32, f32), _: f32) -> Color {
         let &(u0, v0) = triangle.vertexs[0].texture_coordinate.as_ref().unwrap();
         let &(u1, v1) = triangle.vertexs[1].texture_coordinate.as_ref().unwrap();
         let &(u2, v2) = triangle.vertexs[2].texture_coordinate.as_ref().unwrap();
@@ -45,4 +47,6 @@ impl FragmentShader for TextureShader {
         }
         self.texture.get(u, v)
     }
+    fn update_camera(&mut self, _: &Camera) {}
+    fn update_light(&mut self, _: &Light) {}
 }
