@@ -149,10 +149,7 @@ impl Model {
     }
 
     pub fn default_color(self) -> Self {
-        let r = Color::rgba(255, 0, 0, 100);
-        let g = Color::rgba(0, 255, 0, 100);
-        let b = Color::rgba(0, 0, 255, 100);
-        self.colors(&vec![r, g, b])
+        self.colors(&vec![Color::rgb(127, 127, 127)])
     }
 
     pub fn triangles(self) -> Vec<Triangle> {
