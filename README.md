@@ -15,6 +15,8 @@ Available shaders:
 - `z`:  Depth shader
 - `color`: Color shader.
 - `texture`: Texture mapping shader.
+- `phong-color`: Color shader with Phong shading.
+- `phong-texture`: Texture shader with Phong shading.
 
 `path` is the the path **without extension** to `.obj/.mtl` and texture image(`.jpg/.png`) file. 
 It means they should be in same directory.
@@ -30,6 +32,8 @@ There are some simple models in `static` directory.
 - `cone`
 - `multi_models`
 - `earth`
+- `earth_good`
+- `spot`
 
 Don't forget `--release` flag because of its poor performance.
 
