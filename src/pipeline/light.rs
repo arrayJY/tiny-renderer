@@ -10,7 +10,7 @@ impl Default for Light {
     fn default() -> Self {
         Self {
             position: vector3f!(10.0, 10.0, -10.0),
-            intensity: 500.0,
+            intensity: 300.0,
         }
     }
 }

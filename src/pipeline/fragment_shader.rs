@@ -21,7 +21,8 @@ pub fn make_shader(name: &str, path: &str, renderer: &Renderer) -> Option<Box<dy
         "z" => Some(Box::new(ZShader {})),
         "color" => Some(Box::new(ColorShader {})),
         "texture" => Some(Box::new(TextureShader::new(path))),
-        "phong" => Some(Box::new(PhongShader::new(renderer))),
+        "phong-color" => Some(Box::new(PhongShader::color_shader(renderer))),
+        "phong-texture" => Some(Box::new(PhongShader::texture_shader(renderer, path))),
         _ => None,
     }
 }

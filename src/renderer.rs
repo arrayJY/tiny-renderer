@@ -66,9 +66,18 @@ impl Renderer {
     }
 
     pub fn render(&self, width: usize, height: usize) -> Vec<u8> {
-        let camera = self.camera.as_ref().unwrap();
-        let models = self.models.as_ref().unwrap();
-        let fragment_shader = self.shader.as_ref().unwrap();
+        let models = self
+            .models
+            .as_ref()
+            .unwrap_or_else(|| panic!("No models found."));
+        let camera = self
+            .camera
+            .as_ref()
+            .unwrap_or_else(|| panic!("No camera found."));
+        let fragment_shader = self
+            .shader
+            .as_ref()
+            .unwrap_or_else(|| panic!("No fragment shader found."));
 
         //Transformation
         let triangles = triangles_from_models(models, camera, width, height);

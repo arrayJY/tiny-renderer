@@ -1,6 +1,6 @@
 use crate::{
     algebra::vector::Vector3f,
-    pipeline::{camera::Camera, light::Light, model::Triangle},
+    pipeline::{camera::Camera, light::Light, model::Triangle, texture::Texture},
     renderer::Renderer,
     Color, *,
 };
@@ -10,16 +10,33 @@ use super::FragmentShader;
 pub struct PhongShader {
     pub eye_position: Vector3f,
     pub light: Light,
+    pub texture: Option<Texture>,
 }
 
 impl PhongShader {
-    pub fn new(renderer: &Renderer) -> Self {
+    pub fn color_shader(renderer: &Renderer) -> Self {
         let e = &renderer.camera.as_ref().unwrap().eye_position;
         let l = renderer.light.as_ref().unwrap();
         Self {
             eye_position: e.clone(),
             light: l.clone(),
+            texture: None,
         }
+    }
+    pub fn texture_shader(renderer: &Renderer, path: &str) -> Self {
+        let mut shader = PhongShader::color_shader(renderer);
+        let jpg_texture = Texture::from_path(&format!("{}.jpg", path));
+        let png_texture = Texture::from_path(&format!("{}.png", path));
+        let texture = jpg_texture.or(png_texture);
+        shader.texture = match texture {
+            Ok(texture) => Some(texture),
+            Err(err) => {
+                println!("Load texture failed: {}", err);
+                println!("Use phong-color shader.");
+                None
+            }
+        };
+        shader
     }
 }
 
@@ -35,7 +52,19 @@ macro_rules! interpolate {
 
 impl FragmentShader for PhongShader {
     fn shade(&self, triangle: &Triangle, barycenter: (f32, f32, f32), _: f32) -> Color {
-        let Color { r, g, b, .. } = interpolate!(triangle, color; barycenter);
+        let Color { r, g, b, .. } = if let Some(texture) = &self.texture {
+            let &(u0, v0) = triangle.vertexs[0].texture_coordinate.as_ref().unwrap();
+            let &(u1, v1) = triangle.vertexs[1].texture_coordinate.as_ref().unwrap();
+            let &(u2, v2) = triangle.vertexs[2].texture_coordinate.as_ref().unwrap();
+            let (alpha, beta, gamma) = barycenter;
+            let (u, v) = (
+                u0 * alpha + u1 * beta + u2 * gamma,
+                v0 * alpha + v1 * beta + v2 * gamma,
+            );
+            texture.get(u, v)
+        } else {
+            interpolate!(triangle, color; barycenter)
+        };
         let position = Vector3f::from_vec4f(&interpolate!(triangle, world_position; barycenter));
         let normal = Vector3f::from_vec4f(&interpolate!(triangle, normal; barycenter));
 
@@ -78,7 +107,6 @@ impl FragmentShader for PhongShader {
         self.light = light.clone();
     }
 }
-
 
 fn max(a: f32, b: f32) -> f32 {
     if a > b {
