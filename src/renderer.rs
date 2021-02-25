@@ -123,6 +123,7 @@ impl Renderer {
         let p: Vector4f = Vector4f::from_vec3f_point(&camera.eye_position) + (g * length);
         let p = Vector3f::from_vec4f(&p);
         let new_camera = camera.clone().eye_position(p);
+        self.shader.as_mut().unwrap().update_camera(&new_camera);
         self.camera = Some(new_camera);
     }
 }
