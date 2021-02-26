@@ -180,6 +180,7 @@ fn mvp_viewport_transform(
 
     triangles = homogeneous_clip(triangles, camera);
 
+    triangles_w_reciprocal(&mut triangles);
     transform_triangles_vertexs(&mut triangles, &viewport);
     homogeneous_division(&mut triangles);
     triangles
@@ -210,6 +211,15 @@ fn transform_triangles_vertexs(triangles: &mut [Triangle], transform_matrix: &Ma
         })
     })
 }
+
+fn triangles_w_reciprocal(triangles: &mut [Triangle]) {
+    triangles.iter_mut().for_each(|t| {
+        t.vertexs.iter_mut().for_each(|v| {
+            v.w_reciprocal = Some(1.0 / v.position.w());
+        })
+    })
+}
+
 
 fn homogeneous_division(triangles: &mut [Triangle]) {
     triangles.iter_mut().for_each(|t| {

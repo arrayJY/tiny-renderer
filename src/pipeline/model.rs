@@ -9,6 +9,7 @@ pub struct Vertex {
     pub normal: Option<Vector4f>,
     pub texture_coordinate: Option<(f32, f32)>,
     pub color: Option<Color>,
+    pub w_reciprocal: Option<f32>,
 }
 
 #[allow(dead_code)]
@@ -100,6 +101,7 @@ impl Model {
                         normal: normal.clone(),
                         texture_coordinate: texture_coordinate.clone(),
                         color: None,
+                        w_reciprocal:None,
                     })
                     .collect();
 
