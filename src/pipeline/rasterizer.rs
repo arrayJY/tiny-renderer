@@ -114,10 +114,10 @@ impl Rasterizer {
         let &max_y = y.last().unwrap();
 
         let (min_x, min_y, max_x, max_y) = (
-            min_x as usize,
-            min_y as usize,
-            max_x as usize,
-            max_y as usize,
+            min_x.floor() as usize,
+            min_y.floor() as usize,
+            max_x.ceil() as usize,
+            max_y.ceil() as usize,
         );
 
         (min_x, min_y, max_x, max_y)
