@@ -86,11 +86,11 @@ impl Window {
                     if let Some(keycode) = virtual_keycode {
                         match keycode {
                             VirtualKeyCode::A => {
-                                renderer.yaw_camera(PI / 180.0);
+                                renderer.yaw_camera(-PI / 180.0);
                                 render_and_redraw(&platform, &renderer, width, height)
                             }
                             VirtualKeyCode::D => {
-                                renderer.yaw_camera(-PI / 180.0);
+                                renderer.yaw_camera(PI / 180.0);
                                 render_and_redraw(&platform, &renderer, width, height)
                             }
                             VirtualKeyCode::W => {
