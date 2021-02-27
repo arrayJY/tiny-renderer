@@ -3,7 +3,13 @@ mod platform;
 use platform::{Platform, WindowsPlatform};
 use std::f32::consts::PI;
 
-use winit::{dpi::{LogicalSize, PhysicalSize}, event::{DeviceEvent, ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent}, event_loop::{ControlFlow, EventLoop}, window::Window as WinitWindow, window::WindowBuilder};
+use winit::{
+    dpi::{LogicalSize, PhysicalSize},
+    event::{DeviceEvent, ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::Window as WinitWindow,
+    window::WindowBuilder,
+};
 
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
@@ -99,6 +105,22 @@ impl Window {
                             }
                             VirtualKeyCode::S => {
                                 renderer.pitch_camera(-PI / 180.0);
+                                render_and_redraw(&platform, &renderer, width, height)
+                            }
+                            VirtualKeyCode::J => {
+                                renderer.yaw_light(-PI / 180.0);
+                                render_and_redraw(&platform, &renderer, width, height)
+                            }
+                            VirtualKeyCode::L => {
+                                renderer.yaw_light(PI / 180.0);
+                                render_and_redraw(&platform, &renderer, width, height)
+                            }
+                            VirtualKeyCode::I => {
+                                renderer.pitch_light(PI / 180.0);
+                                render_and_redraw(&platform, &renderer, width, height)
+                            }
+                            VirtualKeyCode::K => {
+                                renderer.pitch_light(-PI / 180.0);
                                 render_and_redraw(&platform, &renderer, width, height)
                             }
                             VirtualKeyCode::Up => {

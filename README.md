@@ -39,6 +39,7 @@ Don't forget `--release` flag because of its poor performance.
 
 ### Controls
 - Rotate camera: `W/S/A/D`
+- Rotate light: `I/K/J/L`
 - Zoom camera: `↑/↓`
 
 ## License

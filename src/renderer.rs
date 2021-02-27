@@ -117,6 +117,21 @@ impl Renderer {
         self.camera = Some(new_camera);
     }
 
+    pub fn yaw_light(&mut self, angle: f32)  {
+        let light = self.light.as_mut().unwrap();
+        let axis = vector3f!(0.0, 1.0, 0.0);
+        light.position = rotate_around_axis(&light.position, &axis, angle);
+        self.shader.as_mut().unwrap().update_light(light);
+    }
+
+    pub fn pitch_light(&mut self, angle: f32)  {
+        let light = self.light.as_mut().unwrap();
+        let p = &light.position;
+        let axis = vector3f!(p.z(), 0.0 , -p.x()).normalized();
+        light.position = rotate_around_axis(&light.position, &axis, angle);
+        self.shader.as_mut().unwrap().update_light(light);
+    }
+
     pub fn zoom_camera(&mut self, length: f32) {
         let camera = self.camera.as_ref().unwrap();
         let g = Vector4f::from_vec3f_vector(&camera.gaze_direct);
