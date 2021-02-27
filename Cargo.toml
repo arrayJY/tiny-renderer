@@ -14,17 +14,3 @@ tobj = "2.0.4"
 winapi = "0.3.9"
 raw-window-handle = "0.3.3"
 image = "0.23.13"
-
-[[example]]
-name = "cube"
-path = "examples/cube.rs"
-
-
-[[example]]
-name = "cone"
-path = "examples/cone.rs"
-
-
-[[example]]
-name = "multi-models"
-path = "examples/multi_models.rs"
