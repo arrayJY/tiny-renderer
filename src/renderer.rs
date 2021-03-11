@@ -8,6 +8,7 @@ use crate::{
     pipeline::{
         fragment_shader::{make_shader, FragmentShader},
         light::Light,
+        model::Vertex,
     },
 };
 use crate::{
@@ -117,17 +118,17 @@ impl Renderer {
         self.camera = Some(new_camera);
     }
 
-    pub fn yaw_light(&mut self, angle: f32)  {
+    pub fn yaw_light(&mut self, angle: f32) {
         let light = self.light.as_mut().unwrap();
         let axis = vector3f!(0.0, 1.0, 0.0);
         light.position = rotate_around_axis(&light.position, &axis, angle);
         self.shader.as_mut().unwrap().update_light(light);
     }
 
-    pub fn pitch_light(&mut self, angle: f32)  {
+    pub fn pitch_light(&mut self, angle: f32) {
         let light = self.light.as_mut().unwrap();
         let p = &light.position;
-        let axis = vector3f!(p.z(), 0.0 , -p.x()).normalized();
+        let axis = vector3f!(p.z(), 0.0, -p.x()).normalized();
         light.position = rotate_around_axis(&light.position, &axis, angle);
         self.shader.as_mut().unwrap().update_light(light);
     }
@@ -172,15 +173,15 @@ fn triangles_from_models(
     models
         .iter()
         .map(|model| {
-            let triangles = model.clone().triangles();
-            mvp_viewport_transform(triangles, camera, width, height)
+            let model = model.clone();
+            mvp_viewport_transform(model, camera, width, height)
         })
         .flatten()
         .collect::<Vec<_>>()
 }
 
 fn mvp_viewport_transform(
-    mut triangles: Vec<Triangle>,
+    mut model: Model,
     camera: &Camera,
     width: usize,
     height: usize,
@@ -190,23 +191,23 @@ fn mvp_viewport_transform(
     let projection = Transformation::perspective_projection_transform(camera);
     let viewport = Transformation::viewport_transform(width as f32, height as f32);
 
-    transform_triangles_vertexs(&mut triangles, &view);
-    transform_triangles_vertexs(&mut triangles, &projection);
-
-    triangles = homogeneous_clip(triangles, camera);
-
-    triangles_w_reciprocal(&mut triangles);
-    transform_triangles_vertexs(&mut triangles, &viewport);
-    homogeneous_division(&mut triangles);
-    triangles
+    transform_models_vertexs(&mut model.vertexs, &view);
+    transform_models_vertexs(&mut model.vertexs, &projection);
+    let mut vertexs = homogeneous_clip(model, camera);
+    triangles_w_reciprocal(&mut vertexs);
+    transform_models_vertexs(&mut vertexs, &viewport);
+    homogeneous_division(&mut vertexs);
+    primitive_assembly(vertexs)
 }
 
 // Simple clip
-fn homogeneous_clip(triangles: Vec<Triangle>, camera: &Camera) -> Vec<Triangle> {
-    triangles
-        .into_iter()
-        .filter(|t| {
-            !t.vertexs.iter().any(|v| {
+fn homogeneous_clip(model: Model, camera: &Camera) -> Vec<Vertex> {
+    model
+        .indices
+        .iter()
+        .map(|is| is.iter().map(|&i| &model.vertexs[i as usize]))
+        .filter_map(|vertexs| {
+            if vertexs.clone().any(|v| {
                 let x = v.position.x();
                 let y = v.position.y();
                 let z = v.position.z();
@@ -214,33 +215,41 @@ fn homogeneous_clip(triangles: Vec<Triangle>, camera: &Camera) -> Vec<Triangle> 
                 let n = -camera.near;
                 let f = -camera.far;
                 (x < w || x > -w) || (y < w || y > -w) || (z < w || z > -w) || (n < w || w < f)
-            })
+            }) {
+                None
+            } else {
+                Some(vertexs)
+            }
+        })
+        .flatten()
+        .cloned()
+        .collect()
+}
+
+fn primitive_assembly(vertexs: Vec<Vertex>) -> Vec<Triangle> {
+    vertexs
+        .chunks(3)
+        .map(|vertexs| Triangle {
+            vertexs: vertexs.to_vec(),
         })
         .collect()
 }
 
-fn transform_triangles_vertexs(triangles: &mut [Triangle], transform_matrix: &Matrix4f) {
-    triangles.iter_mut().for_each(|t| {
-        t.vertexs.iter_mut().for_each(|v| {
-            v.position = transform_matrix * &v.position;
-        })
+fn transform_models_vertexs(vertexs: &mut [Vertex], transform_matrix: &Matrix4f) {
+    vertexs.iter_mut().for_each(|v| {
+        v.position = transform_matrix * &v.position;
     })
 }
 
-fn triangles_w_reciprocal(triangles: &mut [Triangle]) {
-    triangles.iter_mut().for_each(|t| {
-        t.vertexs.iter_mut().for_each(|v| {
-            v.w_reciprocal = Some(1.0 / v.position.w());
-        })
+fn triangles_w_reciprocal(vertexs: &mut [Vertex]) {
+    vertexs.iter_mut().for_each(|v| {
+        v.w_reciprocal = Some(1.0 / v.position.w());
     })
 }
 
-
-fn homogeneous_division(triangles: &mut [Triangle]) {
-    triangles.iter_mut().for_each(|t| {
-        t.vertexs.iter_mut().for_each(|v| {
-            v.position = &v.position / v.position.w();
-        })
+fn homogeneous_division(vertexs: &mut [Vertex]) {
+    vertexs.iter_mut().for_each(|v| {
+        v.position = &v.position / v.position.w();
     })
 }
 
