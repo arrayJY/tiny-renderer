@@ -193,7 +193,8 @@ fn mvp_viewport_transform(
 
     transform_models_vertexs(&mut model.vertexs, &view);
     transform_models_vertexs(&mut model.vertexs, &projection);
-    let mut vertexs = homogeneous_clip(model, camera);
+    // let mut vertexs = homogeneous_clip(model, camera);
+    let mut vertexs = complete_homogeneous_clip(model);
     triangles_w_reciprocal(&mut vertexs);
     transform_models_vertexs(&mut vertexs, &viewport);
     homogeneous_division(&mut vertexs);
@@ -201,6 +202,7 @@ fn mvp_viewport_transform(
 }
 
 // Simple clip
+/*
 fn homogeneous_clip(model: Model, camera: &Camera) -> Vec<Vertex> {
     model
         .indices
@@ -224,6 +226,152 @@ fn homogeneous_clip(model: Model, camera: &Camera) -> Vec<Vertex> {
         .flatten()
         .cloned()
         .collect()
+}
+*/
+
+#[derive(Debug, Clone, Copy)]
+enum Plane {
+    W,
+    Left,
+    Right,
+    Top,
+    Bottom,
+    Near,
+    Far,
+}
+
+fn inside_plane(plane: Plane, p: &Vector4f) -> bool {
+    match plane {
+        Plane::W => p.w() < -1.0e-5,
+        Plane::Left => p.x() > p.w(),
+        Plane::Right => p.x() < -p.w(),
+        Plane::Top => p.y() < -p.w(),
+        Plane::Bottom => p.y() > p.w(),
+        Plane::Near => p.z() > p.w(),
+        Plane::Far => p.z() < -p.w(),
+    }
+}
+
+fn get_interest_radio(plane: Plane, prev: &Vector4f, curr: &Vector4f) -> f32 {
+    let pw = prev.w();
+    let cw = curr.w();
+    match plane {
+        Plane::W => (pw + -1.0e-5) / (pw - cw),
+        Plane::Left => (pw - prev.x()) / ((pw - prev.x()) - (cw - curr.x())),
+        Plane::Right => (pw + prev.x()) / ((pw + prev.x()) - (cw + curr.x())),
+        Plane::Top => (pw + prev.y()) / ((pw + prev.y()) - (cw + curr.y())),
+        Plane::Bottom => (pw - prev.y()) / ((pw - prev.y()) - (cw - curr.y())),
+        Plane::Near => (pw - prev.z()) / ((pw - prev.z()) - (cw - curr.z())),
+        Plane::Far => (pw + prev.z()) / ((pw + prev.z()) - (cw + curr.z())),
+    }
+}
+
+fn interpolate_vector4f(v1: &Vector4f, v2: &Vector4f, t: f32) -> Vector4f {
+    v1 + &((v2 - v1) * t)
+}
+fn interpolate_vector3f(v1: &Vector3f, v2: &Vector3f, t: f32) -> Vector3f {
+    v1 + &((v2 - v1) * t)
+}
+
+macro_rules! interpolate_option {
+    ($v1: expr, $v2: expr, $t: expr) => {{
+        if $v1.is_some() && $v2.is_some() {
+            let v1 = $v1.as_ref().unwrap();
+            let v2 = $v2.as_ref().unwrap();
+            Some(v1 + &((v2 - v1) * $t))
+        } else {
+            None
+        }
+    }};
+}
+
+macro_rules! interpolate_option_pair {
+    ($v1: expr, $v2: expr, $t: expr) => {{
+        if $v1.is_some() && $v2.is_some() {
+            let (v11, v12) = $v1.as_ref().unwrap();
+            let (v21, v22) = $v2.as_ref().unwrap();
+            Some((v11 + (v21 - v11) * $t, v12 + (v22 - v11) * $t))
+        } else {
+            None
+        }
+    }};
+}
+
+fn interpolate_vertex(v1: &Vertex, v2: &Vertex, t: f32) -> Vertex {
+    Vertex {
+        position: interpolate_vector4f(&v1.position, &v2.position, t),
+        world_position: interpolate_option!(&v1.world_position, &v2.world_position, t),
+        normal: interpolate_option!(&v1.normal, &v2.normal, t),
+        color: {
+            if v1.color.is_some() && v2.color.is_some() {
+                let v1_color = v1.color.as_ref().unwrap();
+                let v1_color = vector3f!(v1_color.r as f32, v1_color.g as f32, v1_color.b as f32);
+                let v2_color = v2.color.as_ref().unwrap();
+                let v2_color = vector3f!(v2_color.r as f32, v2_color.g as f32, v2_color.b as f32);
+                let v = interpolate_vector3f(&v1_color, &v2_color, t);
+                Some(Color::rgb(v.x() as u8, v.y() as u8, v.z() as u8))
+            } else {
+                None
+            }
+        },
+        w_reciprocal: interpolate_option!(&v1.w_reciprocal, &v2.w_reciprocal, t),
+        texture_coordinate: interpolate_option_pair!(
+            &v1.texture_coordinate,
+            &v2.texture_coordinate,
+            t
+        ),
+    }
+}
+
+fn clip_plane(plane: Plane, vertexs: Vec<Vertex>) -> Vec<Vertex> {
+    let current_vertexs = vertexs.iter();
+    let previous_vertexs = vertexs.iter().cycle().skip(vertexs.len() - 1);
+    let mut vertexs = Vec::<Vertex>::with_capacity(vertexs.len() + 1);
+
+    for (curr, prev) in current_vertexs.zip(previous_vertexs) {
+        let prev_inside = inside_plane(plane, &prev.position);
+        let current_inside = inside_plane(plane, &curr.position);
+
+        if prev_inside != current_inside {
+            let radio = get_interest_radio(plane, &prev.position, &curr.position);
+            vertexs.push(interpolate_vertex(prev, curr, radio));
+        }
+
+        if current_inside {
+            vertexs.push(curr.clone());
+        }
+    }
+    vertexs
+}
+
+fn complete_homogeneous_clip(model: Model) -> Vec<Vertex> {
+    let vertex_groups = model
+        .indices
+        .iter()
+        .map(|is| is.iter().map(|&i| &model.vertexs[i as usize]));
+
+    let mut new_vertexs = Vec::with_capacity(model.vertexs.len());
+    vertex_groups.for_each(|vertexs| {
+        let vertexs = vertexs.cloned().collect::<Vec<_>>();
+        let vertexs = clip_plane(Plane::W, vertexs);
+        let vertexs = clip_plane(Plane::Left, vertexs);
+        let vertexs = clip_plane(Plane::Right, vertexs);
+        let vertexs = clip_plane(Plane::Top, vertexs);
+        let vertexs = clip_plane(Plane::Bottom, vertexs);
+        let vertexs = clip_plane(Plane::Near, vertexs);
+        let vertexs = clip_plane(Plane::Far, vertexs);
+
+        let pb_iter = vertexs.iter().skip(1);
+        let pc_iter = vertexs.iter().skip(2);
+
+        for (pb, pc) in pb_iter.zip(pc_iter) {
+            let pa = &vertexs[0];
+            new_vertexs.push(pa.clone());
+            new_vertexs.push(pb.clone());
+            new_vertexs.push(pc.clone());
+        }
+    });
+    new_vertexs
 }
 
 fn primitive_assembly(vertexs: Vec<Vertex>) -> Vec<Triangle> {
