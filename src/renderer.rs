@@ -290,7 +290,7 @@ macro_rules! interpolate_option_pair {
         if $v1.is_some() && $v2.is_some() {
             let (v11, v12) = $v1.as_ref().unwrap();
             let (v21, v22) = $v2.as_ref().unwrap();
-            Some((v11 + (v21 - v11) * $t, v12 + (v22 - v11) * $t))
+            Some((v11 + (v21 - v11) * $t, v12 + (v22 - v12) * $t))
         } else {
             None
         }
