@@ -194,40 +194,13 @@ fn mvp_viewport_transform(
     transform_models_vertexs(&mut model.vertexs, &view);
     transform_models_vertexs(&mut model.vertexs, &projection);
     // let mut vertexs = homogeneous_clip(model, camera);
-    let mut vertexs = complete_homogeneous_clip(model);
+    let vertexs = complete_homogeneous_clip(model);
+    let mut vertexs = back_face_cull(vertexs);
     triangles_w_reciprocal(&mut vertexs);
     transform_models_vertexs(&mut vertexs, &viewport);
     homogeneous_division(&mut vertexs);
     primitive_assembly(vertexs)
 }
-
-// Simple clip
-/*
-fn homogeneous_clip(model: Model, camera: &Camera) -> Vec<Vertex> {
-    model
-        .indices
-        .iter()
-        .map(|is| is.iter().map(|&i| &model.vertexs[i as usize]))
-        .filter_map(|vertexs| {
-            if vertexs.clone().any(|v| {
-                let x = v.position.x();
-                let y = v.position.y();
-                let z = v.position.z();
-                let w = v.position.w();
-                let n = -camera.near;
-                let f = -camera.far;
-                (x < w || x > -w) || (y < w || y > -w) || (z < w || z > -w) || (n < w || w < f)
-            }) {
-                None
-            } else {
-                Some(vertexs)
-            }
-        })
-        .flatten()
-        .cloned()
-        .collect()
-}
-*/
 
 #[derive(Debug, Clone, Copy)]
 enum Plane {
@@ -380,6 +353,27 @@ fn primitive_assembly(vertexs: Vec<Vertex>) -> Vec<Triangle> {
         .map(|vertexs| Triangle {
             vertexs: vertexs.to_vec(),
         })
+        .collect()
+}
+
+fn back_face_cull(vertexs: Vec<Vertex>) -> Vec<Vertex> {
+    vertexs
+        .chunks(3)
+        .filter(|&vertexs| {
+            let p0 = Vector3f::from_vec4f(&vertexs[0].position);
+            let p1 = Vector3f::from_vec4f(&vertexs[1].position);
+            let p2 = Vector3f::from_vec4f(&vertexs[2].position);
+            let l1 = &p1 - &p0;
+            let l2 = &p2 - &p0;
+            let e = vector3f!(0.0, 0.0, 0.0);
+            let n = l1.cross(&l2).normalized();
+
+            const ZERO: f32 = 0.05; // If it's 0.0, some visible surfaces will be culled.
+            n.dot(&(&e - &p0)) < ZERO || n.dot(&(&e - &p1)) < ZERO || n.dot(&(&e - &p2)) < ZERO
+            // u.cross(&v).normalized().dot(&n) < 0.0
+        })
+        .flatten()
+        .cloned()
         .collect()
 }
 

@@ -4,6 +4,7 @@ A toy software renderer for learning Computer Graphics written in Rust.
 
 ## Features
 - Homogeneous clipping
+- Back-face culling
 - Perspective correct interpolation
 - Depth testing
 - Phong shading
