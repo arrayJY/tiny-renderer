@@ -1,142 +1,75 @@
-mod platform;
+use minifb::{Key, Window, WindowOptions};
 
-use platform::{Platform, WindowsPlatform};
-use std::f32::consts::PI;
-
-use winit::{
-    dpi::{LogicalSize, PhysicalSize},
-    event::{DeviceEvent, ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::Window as WinitWindow,
-    window::WindowBuilder,
-};
-
-use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+pub struct FramebufferWindow {
+    private_window: Window,
+}
 
 use crate::renderer::Renderer;
+use std::f32::consts::PI;
 
-#[allow(dead_code)]
-pub struct Window {
-    event_loop: EventLoop<()>,
-    private_window: WinitWindow,
-    platform: Platform,
-}
-
-fn render_and_redraw(platform: &Platform, renderer: &Renderer, width: usize, height: usize) {
-    platform.write_buffer(&renderer.render(width, height));
-    platform.redraw();
-}
-
-#[allow(dead_code)]
-impl Window {
-    pub fn new(width: usize, height: usize) -> Window {
-        let event_loop = EventLoop::new();
-        let private_window = WindowBuilder::new().build(&event_loop).unwrap();
-        private_window.set_inner_size(LogicalSize::new(width as u32, height as u32));
-        private_window.set_resizable(false);
-        private_window.set_title("Viewer");
-
-        let PhysicalSize { width, height } = private_window.inner_size();
-
-        let platform = match private_window.raw_window_handle() {
-            RawWindowHandle::Windows(handle) => {
-                Platform::Windows(WindowsPlatform::new(handle, width, height))
-            }
-            _ => panic!("Unsupported platform."),
-        };
-
-        Window {
-            private_window,
-            event_loop,
-            platform,
+impl FramebufferWindow {
+    pub fn new(width: usize, height: usize) -> FramebufferWindow {
+        let mut window =
+            Window::new("TinyRenderer", width, height, WindowOptions::default()).unwrap();
+        window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+        FramebufferWindow {
+            private_window: window,
         }
     }
-
-    pub fn size(&self) -> (usize, usize) {
-        let PhysicalSize { width, height } = self.private_window.inner_size();
-        (width as usize, height as usize)
-    }
-
-    pub fn write_buffer(&self, buffer: &[u8]) {
-        self.platform.write_buffer(buffer)
-    }
-
-    pub fn run(self, mut renderer: Renderer) {
-        let (width, height) = self.size();
-        self.write_buffer(&renderer.render(width, height));
-
-        let window = self.private_window;
-        let event_loop = self.event_loop;
-        let platform = self.platform;
-
-        event_loop.run(move |event, _, control_flow| {
-            *control_flow = ControlFlow::Wait;
-            match event {
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    window_id,
-                } if window_id == window.id() => *control_flow = ControlFlow::Exit,
-                Event::RedrawRequested(_) => {
-                    platform.redraw();
-                }
-                //Rotate camera
-                Event::DeviceEvent {
-                    event:
-                        DeviceEvent::Key(KeyboardInput {
-                            virtual_keycode,
-                            state,
-                            ..
-                        }),
-                    ..
-                } if state == ElementState::Pressed => {
-                    if let Some(keycode) = virtual_keycode {
-                        match keycode {
-                            VirtualKeyCode::A => {
-                                renderer.yaw_camera(-PI / 180.0);
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
-                            VirtualKeyCode::D => {
-                                renderer.yaw_camera(PI / 180.0);
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
-                            VirtualKeyCode::W => {
-                                renderer.pitch_camera(PI / 180.0);
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
-                            VirtualKeyCode::S => {
-                                renderer.pitch_camera(-PI / 180.0);
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
-                            VirtualKeyCode::J => {
-                                renderer.yaw_light(-PI / 180.0);
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
-                            VirtualKeyCode::L => {
-                                renderer.yaw_light(PI / 180.0);
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
-                            VirtualKeyCode::I => {
-                                renderer.pitch_light(PI / 180.0);
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
-                            VirtualKeyCode::K => {
-                                renderer.pitch_light(-PI / 180.0);
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
-                            VirtualKeyCode::Up => {
-                                renderer.zoom_camera(0.1);
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
-                            VirtualKeyCode::Down => {
-                                renderer.zoom_camera(-0.1);
-                                render_and_redraw(&platform, &renderer, width, height)
-                            }
-                            _ => {}
-                        }
+    pub fn run(&mut self, mut renderer: Renderer) {
+        let (width, height) = self.private_window.get_size();
+        let mut buffer = renderer.render(width, height);
+        while self.private_window.is_open() && !self.private_window.is_key_down(Key::Escape) {
+            // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
+            self.private_window
+                .update_with_buffer(&buffer, width, height)
+                .unwrap();
+            self.private_window
+                .get_keys()
+                .iter()
+                .for_each(|key| match key {
+                    Key::D => {
+                        renderer.yaw_camera(PI / 180.0);
+                        buffer = renderer.render(width, height);
                     }
-                }
-                _ => (),
-            }
-        });
+                    Key::A => {
+                        renderer.yaw_camera(-PI / 180.0);
+                        buffer = renderer.render(width, height);
+                    }
+                    Key::W => {
+                        renderer.pitch_camera(PI / 180.0);
+                        buffer = renderer.render(width, height);
+                    }
+                    Key::S => {
+                        renderer.pitch_camera(-PI / 180.0);
+                        buffer = renderer.render(width, height);
+                    }
+                    Key::J => {
+                        renderer.yaw_light(-PI / 180.0);
+                        buffer = renderer.render(width, height);
+                    }
+                    Key::L => {
+                        renderer.yaw_light(PI / 180.0);
+                        buffer = renderer.render(width, height);
+                    }
+                    Key::I => {
+                        renderer.pitch_light(PI / 180.0);
+                        buffer = renderer.render(width, height);
+                    }
+                    Key::K => {
+                        renderer.pitch_light(-PI / 180.0);
+                        buffer = renderer.render(width, height);
+                    }
+                    Key::Up => {
+                        renderer.zoom_camera(0.1);
+                        buffer = renderer.render(width, height);
+                    }
+                    Key::Down => {
+                        renderer.zoom_camera(-0.1);
+                        buffer = renderer.render(width, height);
+                    }
+                    _ => (),
+                });
+        }
     }
 }

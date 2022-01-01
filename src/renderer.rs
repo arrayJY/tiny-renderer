@@ -15,7 +15,7 @@ use crate::{
     pipeline::{
         camera::Camera, model::Model, rasterizer::Rasterizer, transformation::Transformation,
     },
-    window::Window,
+    window::FramebufferWindow,
     Color, *,
 };
 
@@ -23,7 +23,7 @@ use crate::{
 pub struct Renderer {
     pub models: Option<Vec<Model>>,
     pub camera: Option<Camera>,
-    pub window: Option<Window>,
+    pub window: Option<FramebufferWindow>,
     pub width: usize,
     pub shader: Option<Box<dyn FragmentShader>>,
     pub height: usize,
@@ -62,11 +62,11 @@ impl Renderer {
 
     pub fn run(self) {
         let (width, height) = (self.width, self.height);
-        let window = Window::new(width, height);
+        let mut window = FramebufferWindow::new(width, height);
         window.run(self);
     }
 
-    pub fn render(&self, width: usize, height: usize) -> Vec<u8> {
+    pub fn render(&self, width: usize, height: usize) -> Vec<u32> {
         let models = self
             .models
             .as_ref()
@@ -395,10 +395,14 @@ fn homogeneous_division(vertexs: &mut [Vertex]) {
     })
 }
 
-fn bitmap_from_framebuffer(frame_buffer: &[Option<Color>], width: usize, height: usize) -> Vec<u8> {
-    let mut frame_buffer_bitmap = Vec::with_capacity(width * height * 4);
+fn bitmap_from_framebuffer(
+    frame_buffer: &[Option<Color>],
+    width: usize,
+    height: usize,
+) -> Vec<u32> {
+    let mut frame_buffer_bitmap: Vec<u32> = Vec::with_capacity(width * height);
     //Background
-    let background = [255u8, 255, 255, 100];
+    let background: u32 = 100 << 24 | 255 << 16 | 255 << 8 | 255; // [255u8, 255, 255, 100];
     frame_buffer
         .iter()
         .enumerate()
@@ -408,14 +412,16 @@ fn bitmap_from_framebuffer(frame_buffer: &[Option<Color>], width: usize, height:
         .for_each(|line| {
             line.iter().for_each(|c| {
                 if let Some(c) = c {
-                    frame_buffer_bitmap.push(c.b);
-                    frame_buffer_bitmap.push(c.g);
-                    frame_buffer_bitmap.push(c.r);
-                    frame_buffer_bitmap.push(c.a);
+                    let pixel: u32 = ((c.a as u32) << 24)
+                        | ((c.r as u32) << 16)
+                        | ((c.g as u32) << 8)
+                        | c.b as u32;
+                    frame_buffer_bitmap.push(pixel);
+                    // frame_buffer_bitmap.push(c.g);
+                    // frame_buffer_bitmap.push(c.r);
+                    // frame_buffer_bitmap.push(c.a);
                 } else {
-                    background.iter().for_each(|&c| {
-                        frame_buffer_bitmap.push(c);
-                    })
+                    frame_buffer_bitmap.push(background)
                 }
             })
         });

@@ -1,5 +1,4 @@
-# Tiny Renderer   ![](https://img.shields.io/static/v1?label=Windows&message=passing&color=success)
-
+# Tiny Renderer   ![](https://img.shields.io/static/v1?label=Linux&message=passing&color=success) ![](https://img.shields.io/static/v1?label=MacOS&message=passing&color=success) ![](https://img.shields.io/static/v1?label=Windows&message=passing&color=success)
 A toy software renderer for learning Computer Graphics written in Rust.
 
 ## Features
@@ -11,7 +10,7 @@ A toy software renderer for learning Computer Graphics written in Rust.
 - Orbital camera controls
 
 ## Usage
-Tiny renderer is only available in **Windows** now.
+Tiny renderer is available in **Windows, Linux and MacOSX** now.
 
 ### Launch
 You can run with `cargo`.
