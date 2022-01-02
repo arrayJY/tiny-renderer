@@ -417,9 +417,6 @@ fn bitmap_from_framebuffer(
                         | ((c.g as u32) << 8)
                         | c.b as u32;
                     frame_buffer_bitmap.push(pixel);
-                    // frame_buffer_bitmap.push(c.g);
-                    // frame_buffer_bitmap.push(c.r);
-                    // frame_buffer_bitmap.push(c.a);
                 } else {
                     frame_buffer_bitmap.push(background)
                 }

@@ -5,7 +5,7 @@ use crate::{
     Color, *,
 };
 
-use super::FragmentShader;
+use super::{FragmentShader};
 
 pub struct PhongShader {
     pub eye_position: Vector3f,
@@ -40,27 +40,10 @@ impl PhongShader {
     }
 }
 
-macro_rules! interpolate {
-    ($triangle: tt, $attr: ident; $barycenter: expr) => {{
-        let (alpha, beta, gamma) = $barycenter;
-        let v1 = $triangle.vertexs[0].$attr.as_ref().unwrap();
-        let v2 = $triangle.vertexs[1].$attr.as_ref().unwrap();
-        let v3 = $triangle.vertexs[2].$attr.as_ref().unwrap();
-        v1 * alpha + v2 * beta + v3 * gamma
-    }};
-}
-
 impl FragmentShader for PhongShader {
     fn shade(&self, triangle: &Triangle, barycenter: (f32, f32, f32), _: f32) -> Color {
         let Color { r, g, b, .. } = if let Some(texture) = &self.texture {
-            let &(u0, v0) = triangle.vertexs[0].texture_coordinate.as_ref().unwrap();
-            let &(u1, v1) = triangle.vertexs[1].texture_coordinate.as_ref().unwrap();
-            let &(u2, v2) = triangle.vertexs[2].texture_coordinate.as_ref().unwrap();
-            let (alpha, beta, gamma) = barycenter;
-            let (u, v) = (
-                u0 * alpha + u1 * beta + u2 * gamma,
-                v0 * alpha + v1 * beta + v2 * gamma,
-            );
+            let (u, v) = interpolate_uv!(triangle, texture_coordinate; barycenter);
             texture.get(u, v)
         } else {
             interpolate!(triangle, color; barycenter)
