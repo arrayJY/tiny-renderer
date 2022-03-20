@@ -24,6 +24,22 @@ pub struct Triangle {
     pub vertexs: Vec<Vertex>,
 }
 
+impl Triangle {
+    pub fn get_barycenter(&self) -> Vector4f {
+        const C: f32 = 1.0f32 / 3.0f32;
+        let mut r = Vector4f::new();
+        let iter = {
+            let i = self.vertexs.iter();
+            let j = self.vertexs.iter().cycle().skip(1);
+            i.zip(j)
+        };
+        for (i, j) in iter {
+            r = r + (&i.position - &j.position) * C;
+        }
+        r
+    }
+}
+
 #[allow(dead_code)]
 impl Model {
     pub fn new() -> Self {
@@ -101,7 +117,7 @@ impl Model {
                         normal: normal.clone(),
                         texture_coordinate: texture_coordinate.clone(),
                         color: None,
-                        w_reciprocal:None,
+                        w_reciprocal: None,
                     })
                     .collect();
 
