@@ -1,7 +1,10 @@
-use super::{fragment_shader::FragmentShader, model::Triangle};
-use crate::*;
-use algebra::vector::Vector3f;
 use core::f32;
+
+use algebra::vector::Vector3f;
+
+use crate::*;
+
+use super::{fragment_shader::FragmentShader, model::Triangle};
 
 #[allow(dead_code)]
 pub struct Rasterizer {
@@ -37,10 +40,9 @@ impl Rasterizer {
             let coord_iter = (min_x..max_x).flat_map(move |a| (min_y..max_y).map(move |b| (a, b)));
 
             coord_iter.for_each(|(x, y)| {
-                if Rasterizer::inside_triangle((x, y), triangle) {
+                let barycenter = Rasterizer::barycentric_2d(x as f32, y as f32, triangle);
+                if Rasterizer::inside_triangle_by_barycenter(barycenter) {
                     let index = y * width + x;
-                    let barycenter =
-                        Rasterizer::barycentric_2d(x as f32, y as f32, triangle);
                     let z = -Rasterizer::z_interpolation(triangle, barycenter);
                     if z < z_buffer[index] {
                         let barycenter = Rasterizer::perspective_correct(triangle, barycenter);
@@ -85,7 +87,10 @@ impl Rasterizer {
         (c1, c2, c3)
     }
 
-    fn perspective_correct(triangle: &Triangle, (alpha, beta, gamma): (f32, f32, f32)) -> (f32, f32, f32) {
+    fn perspective_correct(
+        triangle: &Triangle,
+        (alpha, beta, gamma): (f32, f32, f32),
+    ) -> (f32, f32, f32) {
         let w0 = triangle.vertexs[0].w_reciprocal.unwrap() * alpha;
         let w1 = triangle.vertexs[1].w_reciprocal.unwrap() * beta;
         let w2 = triangle.vertexs[2].w_reciprocal.unwrap() * gamma;
@@ -94,24 +99,21 @@ impl Rasterizer {
     }
 
     fn bounding_box(triangle: &Triangle) -> (usize, usize, usize, usize) {
-        let mut x = triangle
+        let mut min_x: f32 = f32::MAX;
+        let mut min_y: f32 = f32::MAX;
+        let mut max_x: f32 = f32::MIN;
+        let mut max_y: f32 = f32::MIN;
+        triangle
             .vertexs
             .iter()
-            .map(|vertex| vertex.position.x())
-            .collect::<Vec<_>>();
-        let mut y = triangle
-            .vertexs
-            .iter()
-            .map(|vertex| vertex.position.y())
-            .collect::<Vec<_>>();
-
-        x.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        y.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
-        let &min_x = x.first().unwrap();
-        let &max_x = x.last().unwrap();
-        let &min_y = y.first().unwrap();
-        let &max_y = y.last().unwrap();
+            .map(|vertex| &vertex.position)
+            .for_each(|position| {
+                let (x, y) = (position.x(), position.y());
+                min_x = if x < min_x { x } else { min_x };
+                min_y = if y < min_y { y } else { min_y };
+                max_x = if x > max_x { x } else { max_x };
+                max_y = if y > max_y { y } else { max_y };
+            });
 
         let (min_x, min_y, max_x, max_y) = (
             min_x.floor() as usize,
@@ -143,5 +145,9 @@ impl Rasterizer {
 
         (ab.cross(&ap).z() > 0.0 && bc.cross(&bp).z() > 0.0 && ca.cross(&cp).z() > 0.0)
             || (ab.cross(&ap).z() < 0.0 && bc.cross(&bp).z() < 0.0 && ca.cross(&cp).z() < 0.0)
+    }
+
+    fn inside_triangle_by_barycenter((alpha, beta, gamma) : (f32, f32, f32)) -> bool {
+        !(alpha < 0.0 || beta < 0.0 || gamma < 0.0)
     }
 }

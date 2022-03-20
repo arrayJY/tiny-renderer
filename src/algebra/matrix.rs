@@ -1,11 +1,3 @@
-mod from;
-mod iter;
-pub mod macros;
-mod ops;
-pub mod transform;
-use generic_array::typenum::{Prod, Unsigned};
-use generic_array::typenum::{U1, U2, U3, U4};
-use generic_array::{ArrayLength, GenericArray};
 use std::usize;
 use std::{
     fmt::Debug,
@@ -15,7 +7,17 @@ use std::{
     iter::Sum,
     ops::{AddAssign, Neg},
 };
+
+use generic_array::typenum::{Prod, Unsigned};
+use generic_array::typenum::{U1, U2, U3, U4};
+use generic_array::{ArrayLength, GenericArray};
 use typenum::{IsEqual, IsLessOrEqual, True};
+
+mod from;
+mod iter;
+pub mod macros;
+mod ops;
+pub mod transform;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Matrix<T, Row, Col>
@@ -64,6 +66,20 @@ where
         } else {
             None
         }
+    }
+
+    pub unsafe fn get_unchecked(&self, row: usize, col: usize) -> &T {
+        let cols= self.cols();
+        self.data.get_unchecked(row * cols + col)
+    }
+
+    pub unsafe fn get_unchecked_mut(&mut self, row: usize, col: usize) -> &mut T {
+        let cols= self.cols();
+        self.data.get_unchecked_mut(row * cols + col)
+    }
+
+    pub unsafe fn set_unchecked(&mut self, row: usize, col: usize, value: T) {
+        *self.get_unchecked_mut(row, col) = value;
     }
 
     pub fn set(&mut self, row: usize, col: usize, value: T) -> Result<(), ()> {

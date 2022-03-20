@@ -1,9 +1,11 @@
 use std::ops::{Mul, Neg};
 
-use super::matrix::Matrix;
-use crate::{input_matrix, vector3f, vector4f};
 use generic_array::ArrayLength;
 use typenum::{Prod, Unsigned, U1, U2, U3, U4};
+
+use crate::{input_matrix, vector4f};
+
+use super::matrix::Matrix;
 
 #[allow(dead_code)]
 pub type Vector<T, N> = Matrix<T, N, U1>;
@@ -66,28 +68,28 @@ where
 
 impl<T: Default + Copy> Vector3<T> {
     pub fn x(&self) -> T {
-        self[0][0]
+        unsafe { *self.get_unchecked(0, 0) }
     }
     pub fn y(&self) -> T {
-        self[1][0]
+        unsafe { *self.get_unchecked(1, 0) }
     }
     pub fn z(&self) -> T {
-        self[2][0]
+        unsafe { *self.get_unchecked(2, 0) }
     }
 }
 
 impl<T: Default + Copy> Vector4<T> {
     pub fn x(&self) -> T {
-        self[0][0]
+        unsafe { *self.get_unchecked(0, 0) }
     }
     pub fn y(&self) -> T {
-        self[1][0]
+        unsafe { *self.get_unchecked(1, 0) }
     }
     pub fn z(&self) -> T {
-        self[2][0]
+        unsafe { *self.get_unchecked(2, 0) }
     }
     pub fn w(&self) -> T {
-        self[3][0]
+        unsafe { *self.get_unchecked(3, 0) }
     }
 
     pub fn new_point() -> Vector4f {
@@ -97,21 +99,40 @@ impl<T: Default + Copy> Vector4<T> {
     pub fn new_vector() -> Vector4f {
         vector4f!(0.0, 0.0, 0.0, 0.0)
     }
-
 }
 
 impl Vector3f {
     pub fn from_vec4f(v: &Vector4f) -> Self {
-        vector3f!(v.x(), v.y(), v.z())
+        let mut r = Vector3f::new();
+        unsafe {
+            r.set_unchecked(0, 0, v.x());
+            r.set_unchecked(1, 0, v.y());
+            r.set_unchecked(2, 0, v.z());
+        }
+        r
     }
 }
 
 impl Vector4f {
     pub fn from_vec3f_point(v: &Vector3f) -> Vector4f {
-        vector4f!(v.x(), v.y(), v.z(), 1.0)
+        let mut r = Self::new();
+        unsafe {
+            r.set_unchecked(0, 0, v.x());
+            r.set_unchecked(1, 0, v.y());
+            r.set_unchecked(2, 0, v.z());
+            r.set_unchecked(3, 0, 1.0);
+        }
+        r
     }
     pub fn from_vec3f_vector(v: &Vector3f) -> Vector4f {
-        vector4f!(v.x(), v.y(), v.z(), 0.0)
+        let mut r = Self::new();
+        unsafe {
+            r.set_unchecked(0, 0, v.x());
+            r.set_unchecked(1, 0, v.y());
+            r.set_unchecked(2, 0, v.z());
+            r.set_unchecked(3, 0, 0.0);
+        }
+        r
     }
 }
 
