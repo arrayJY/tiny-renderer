@@ -6,4 +6,4 @@ pub mod fragment_shader;
 pub mod color;
 pub mod texture;
 pub mod light;
-pub mod data_structure;
+pub mod ray_tracing;

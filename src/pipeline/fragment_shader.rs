@@ -4,7 +4,6 @@ pub mod color_shader;
 pub mod phong_shader;
 pub mod texture_shader;
 pub mod z_shader;
-pub mod pbr_shader;
 
 pub trait FragmentShader {
     fn shade(&self, triangle: &Triangle, barycenter: (f32, f32, f32), z: f32) -> Color;
