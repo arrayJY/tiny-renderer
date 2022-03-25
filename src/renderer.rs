@@ -8,7 +8,7 @@ use crate::{
     pipeline::{
         fragment_shader::{make_shader, FragmentShader},
         light::Light,
-        model::Vertex,
+        model::{Vertex, Material},
     },
 };
 use crate::{
@@ -18,6 +18,8 @@ use crate::{
     window::FramebufferWindow,
     Color, *,
 };
+
+use std::ops::{Add, Mul, Sub};
 
 #[allow(dead_code)]
 pub struct Renderer {
@@ -271,21 +273,54 @@ macro_rules! interpolate_option_pair {
 }
 
 fn interpolate_vertex(v1: &Vertex, v2: &Vertex, t: f32) -> Vertex {
+    fn interpolate_scalar<T: Copy>(v1: T, v2: T, t: f32) -> T
+    where
+        T: Copy + Add<T, Output = T> + Sub<T, Output = T> + Mul<f32, Output = T>,
+    {
+        return v1 + (v2 - v1) * t;
+    }
+    fn interpolate_color(c1: &Color, c2: &Color, t: f32) -> Color {
+        let (r1, g1, b1, a1) = (c1.r as f32, c1.g as f32, c1.b as f32, c1.a as f32);
+        let (r2, g2, b2, a2) = (c2.r as f32, c2.g as f32, c2.b as f32, c2.a as f32);
+        Color {
+            r: interpolate_scalar(r1, r2, t) as u8,
+            g: interpolate_scalar(g1, g2, t) as u8,
+            b: interpolate_scalar(b1, b2, t) as u8,
+            a: interpolate_scalar(a1, a2, t) as u8,
+        }
+    }
+
     Vertex {
         position: interpolate_vector4f(&v1.position, &v2.position, t),
         world_position: interpolate_option!(&v1.world_position, &v2.world_position, t),
         normal: interpolate_option!(&v1.normal, &v2.normal, t),
         color: {
             if v1.color.is_some() && v2.color.is_some() {
+                let (c1, c2) = (v1.color.as_ref().unwrap(), v2.color.as_ref().unwrap());
+                Some(interpolate_color(c1, c2, t))
+                /*
                 let v1_color = v1.color.as_ref().unwrap();
                 let v1_color = vector3f!(v1_color.r as f32, v1_color.g as f32, v1_color.b as f32);
                 let v2_color = v2.color.as_ref().unwrap();
                 let v2_color = vector3f!(v2_color.r as f32, v2_color.g as f32, v2_color.b as f32);
                 let v = interpolate_vector3f(&v1_color, &v2_color, t);
                 Some(Color::rgb(v.x() as u8, v.y() as u8, v.z() as u8))
+                */
             } else {
                 None
             }
+        },
+        material: if let (Some(m1), Some(m2)) = (v1.material.as_ref() , v2.material.as_ref()) {
+            Some(Material {
+                ambient_color: interpolate_vector3f(&m1.ambient_color,& m2.ambient_color, t),
+                diffuse_color: interpolate_vector3f(&m1.diffuse_color,& m2.diffuse_color, t),
+                specular_color: interpolate_vector3f(&m1.specular_color,& m2.specular_color, t),
+                shininess: interpolate_scalar(m1.shininess, m2.shininess, t),
+                optical_density: interpolate_scalar(m1.optical_density, m2.optical_density, t),
+                dissolve: interpolate_scalar(m1.dissolve, m2.dissolve, t),
+            })
+        } else {
+            None
         },
         w_reciprocal: interpolate_option!(&v1.w_reciprocal, &v2.w_reciprocal, t),
         texture_coordinate: interpolate_option_pair!(

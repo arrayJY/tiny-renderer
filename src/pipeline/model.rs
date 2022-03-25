@@ -1,4 +1,4 @@
-use crate::{algebra::vector::Vector4f, Color, *};
+use crate::{algebra::vector::{Vector4f, Vector3f}, Color, *};
 use std::{collections::HashSet, convert::TryInto};
 use tobj;
 
@@ -9,7 +9,18 @@ pub struct Vertex {
     pub normal: Option<Vector4f>,
     pub texture_coordinate: Option<(f32, f32)>,
     pub color: Option<Color>,
+    pub material: Option<Material>,
     pub w_reciprocal: Option<f32>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Material {
+    pub ambient_color: Vector3f,  //Ka
+    pub diffuse_color: Vector3f,  //Kd
+    pub specular_color: Vector3f, //Ks
+    pub shininess: f32,        //Ns
+    pub optical_density: f32,  //Ni
+    pub dissolve: f32,         //d
 }
 
 #[allow(dead_code)]
@@ -52,7 +63,19 @@ impl Model {
     pub fn from_obj(path: &str) -> Vec<Self> {
         let obj = tobj::load_obj(path, true);
         assert!(obj.is_ok());
-        let (models, _) = obj.unwrap();
+        let (models, meterials) = obj.unwrap();
+
+        fn to_vector3f(c: &[f32; 3]) -> Vector3f {
+            vector3f!(c[0], c[1], c[2])
+            /*
+            Color {
+                r: (c[0] * 255f32) as u8,
+                g: (c[1] * 255f32) as u8,
+                b: (c[2] * 255f32) as u8,
+                a: (d * 255f32) as u8,
+            }
+ */
+        }
 
         models
             .iter()
@@ -117,6 +140,27 @@ impl Model {
                         normal: normal.clone(),
                         texture_coordinate: texture_coordinate.clone(),
                         color: None,
+                        // material: material,
+                        material: if let Some(id) = mesh.material_id {
+                            let m = &meterials[id];
+                            let ka = &m.ambient;
+                            let kd = &m.diffuse;
+                            let ks = &m.specular;
+                            let d = m.dissolve;
+                            let ns = m.shininess;
+                            let ni = m.optical_density;
+                            Some(Material {
+                                // ambient_color: to_color(ka, d),
+                                ambient_color: to_vector3f(ka),
+                                diffuse_color: to_vector3f(kd),
+                                specular_color: to_vector3f(ks),
+                                shininess: ns,
+                                optical_density: ni,
+                                dissolve: d,
+                            })
+                        } else {
+                            None
+                        },
                         w_reciprocal: None,
                     })
                     .collect();
