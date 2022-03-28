@@ -1,4 +1,5 @@
 mod ops;
+mod transform;
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct MatrixNew<const N: usize>(pub [[f32; N]; N]);
@@ -144,6 +145,17 @@ impl<const N: usize> MatrixNew<N> {
     }
 }
 
-
 pub type MatrixNew3 = MatrixNew<3>;
 pub type MatrixNew4 = MatrixNew<4>;
+
+macro_rules! def_matrix_func {
+    ($func: ident, $n: expr) => {
+        pub fn $func(data: [[f32; $n]; $n]) -> MatrixNew::<$n> {
+            MatrixNew::<$n>(data)
+        }
+    };
+}
+
+
+def_matrix_func!(matrix3, 3);
+def_matrix_func!(matrix4, 4);

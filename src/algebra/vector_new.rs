@@ -85,3 +85,14 @@ impl VectorNew4 {
     def_getter!(z, z_mut, 2);
     def_getter!(w, w_mut, 3);
 }
+
+macro_rules! def_vector_func {
+    ($func: ident, $n: expr) => {
+        pub fn $func(data: [f32; $n]) -> VectorNew::<$n> {
+            VectorNew::<$n>(data)
+        }
+    };
+}
+
+def_vector_func!(vector3, 3);
+def_vector_func!(vector4, 4);
