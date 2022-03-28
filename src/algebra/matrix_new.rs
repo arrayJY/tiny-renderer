@@ -1,6 +1,6 @@
 mod ops;
 #[repr(C)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MatrixNew<const N: usize>(pub [[f32; N]; N]);
 
 impl<const N: usize> Default for MatrixNew<N> {
