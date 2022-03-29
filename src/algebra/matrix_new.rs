@@ -2,16 +2,16 @@ mod ops;
 mod transform;
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq)]
-pub struct MatrixNew<const N: usize>(pub [[f32; N]; N]);
+pub struct Matrix<const N: usize>(pub [[f32; N]; N]);
 
-impl<const N: usize> Default for MatrixNew<N> {
+impl<const N: usize> Default for Matrix<N> {
     fn default() -> Self {
         Self([[f32::default(); N]; N])
     }
 }
 
-impl<const N: usize, const M: usize> From<&MatrixNew<M>> for MatrixNew<N> {
-    fn from(other: &MatrixNew<M>) -> Self {
+impl<const N: usize, const M: usize> From<&Matrix<M>> for Matrix<N> {
+    fn from(other: &Matrix<M>) -> Self {
         let mut m = Self::new();
         let s = if N < M { N } else { M };
         for (i, j) in Self::index_iter_with_size(s) {
@@ -24,7 +24,7 @@ impl<const N: usize, const M: usize> From<&MatrixNew<M>> for MatrixNew<N> {
     }
 }
 
-impl<const N: usize> MatrixNew<N> {
+impl<const N: usize> Matrix<N> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -47,8 +47,8 @@ impl<const N: usize> MatrixNew<N> {
 
     // Return the transposed matrix.
     // It won't change self.
-    pub fn transpose(&self) -> MatrixNew<N> {
-        let mut m = MatrixNew::<N>::new();
+    pub fn transpose(&self) -> Matrix<N> {
+        let mut m = Matrix::<N>::new();
         for (i, j) in Self::index_iter_with_size(N) {
             unsafe {
                 let v = self.get_unchecked(i, j);
@@ -87,7 +87,7 @@ impl<const N: usize> MatrixNew<N> {
     }
 }
 
-impl<const N: usize> MatrixNew<N> {
+impl<const N: usize> Matrix<N> {
     pub fn inverse_matrix(&self) -> Self {
         let det = self.determinant();
         (self.cofactor().transpose()) * (1.0 / det)
@@ -151,13 +151,13 @@ impl<const N: usize> MatrixNew<N> {
     }
 }
 
-pub type MatrixNew3 = MatrixNew<3>;
-pub type MatrixNew4 = MatrixNew<4>;
+pub type Matrix3 = Matrix<3>;
+pub type Matrix4 = Matrix<4>;
 
 macro_rules! def_matrix_func {
     ($func: ident, $n: expr) => {
-        pub fn $func(data: [[f32; $n]; $n]) -> MatrixNew<$n> {
-            MatrixNew::<$n>(data)
+        pub fn $func(data: [[f32; $n]; $n]) -> Matrix<$n> {
+            Matrix::<$n>(data)
         }
     };
 }

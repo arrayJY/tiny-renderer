@@ -1,5 +1,5 @@
 use crate::{
-    algebra::vector_new::{VectorNew3, vector3},
+    algebra::vector_new::{Vector3, vector3},
     pipeline::{camera::Camera, light::Light, model::Triangle, texture::Texture},
     renderer::Renderer,
     Color, *
@@ -8,7 +8,7 @@ use crate::{
 use super::{FragmentShader};
 
 pub struct PhongShader {
-    pub eye_position: VectorNew3,
+    pub eye_position: Vector3,
     pub light: Light,
     pub texture: Option<Texture>,
 }
@@ -48,8 +48,8 @@ impl FragmentShader for PhongShader {
         } else {
             interpolate!(triangle, color; barycenter)
         };
-        let position = VectorNew3::from(&interpolate!(triangle, world_position; barycenter));
-        let normal = VectorNew3::from(&interpolate!(triangle, normal; barycenter));
+        let position = Vector3::from(&interpolate!(triangle, world_position; barycenter));
+        let normal = Vector3::from(&interpolate!(triangle, normal; barycenter));
 
         let ambient_light_intensity = vector3([10.0, 10.0, 10.0]);
         let ka = vector3([0.005, 0.005, 0.005]);

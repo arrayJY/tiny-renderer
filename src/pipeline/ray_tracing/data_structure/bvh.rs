@@ -1,4 +1,4 @@
-use crate::algebra::vector_new::VectorNew4;
+use crate::algebra::vector_new::Vector4;
 use crate::pipeline::model::{Triangle};
 
 use super::tree::Node;
@@ -10,13 +10,13 @@ type BVHTreeNode = Node<Option<Vec<Triangle>>>;
 
 impl BVHTree {
     pub fn from_triangles(triangles: &[Triangle]) -> Tree<Option<Vec<Triangle>>> {
-        let funcs: [fn(&VectorNew4) -> f32; 3] = [
-            |v: &VectorNew4| v.x(),
-            |v: &VectorNew4| v.y(),
-            |v: &VectorNew4| v.z(),
+        let funcs: [fn(&Vector4) -> f32; 3] = [
+            |v: &Vector4| v.x(),
+            |v: &Vector4| v.y(),
+            |v: &Vector4| v.z(),
         ];
 
-        let mut barycenters: Vec<VectorNew4> = triangles
+        let mut barycenters: Vec<Vector4> = triangles
             .iter()
             .map(|triangle| triangle.get_barycenter())
             .collect();
@@ -54,12 +54,12 @@ impl BVHTree {
     }
 
     fn build_tree_leaves(
-        barycenters: &mut [VectorNew4],
+        barycenters: &mut [Vector4],
         node_indexs: &mut [Option<usize>],
         p: usize,
         r: usize,
         i: usize,
-        funcs: &[fn(&VectorNew4) -> f32],
+        funcs: &[fn(&Vector4) -> f32],
         mut fi: usize,
     ) {
         if r - p < 20 {
@@ -83,11 +83,11 @@ impl BVHTree {
     }
 
     fn quick_select(
-        barycenters: &mut [VectorNew4],
+        barycenters: &mut [Vector4],
         p: usize,
         r: usize,
         i: usize,
-        f: impl Fn(&VectorNew4) -> f32,
+        f: impl Fn(&Vector4) -> f32,
     ) -> usize {
         if p == r {
             return p;
@@ -105,10 +105,10 @@ impl BVHTree {
     }
 
     fn randomized_partition(
-        barycenters: &mut [VectorNew4],
+        barycenters: &mut [Vector4],
         p: usize,
         r: usize,
-        f: impl Fn(&VectorNew4) -> f32,
+        f: impl Fn(&Vector4) -> f32,
     ) -> usize {
         use rand::Rng;
         let i = rand::thread_rng().gen_range(p..r);
@@ -117,10 +117,10 @@ impl BVHTree {
     }
 
     fn partition(
-        barycenters: &mut [VectorNew4],
+        barycenters: &mut [Vector4],
         p: usize,
         r: usize,
-        f: impl Fn(&VectorNew4) -> f32,
+        f: impl Fn(&Vector4) -> f32,
     ) -> usize {
         // let x = 
         let mut i = p - 1;

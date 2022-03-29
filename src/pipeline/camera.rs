@@ -1,10 +1,10 @@
-use crate::algebra::vector_new::{vector3, VectorNew3};
+use crate::algebra::vector_new::{vector3, Vector3};
 use std::f32::consts::PI;
 #[derive(Debug, Clone)]
 pub struct Camera {
-    pub gaze_direct: VectorNew3,
-    pub up_direct: VectorNew3,
-    pub eye_position: VectorNew3,
+    pub gaze_direct: Vector3,
+    pub up_direct: Vector3,
+    pub eye_position: Vector3,
     pub eye_fov: f32,
     pub aspect_ratio: f32,
     pub near: f32,
@@ -15,9 +15,9 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         Camera {
-            gaze_direct: VectorNew3::new(),
-            up_direct: VectorNew3::new(),
-            eye_position: VectorNew3::new(),
+            gaze_direct: Vector3::new(),
+            up_direct: Vector3::new(),
+            eye_position: Vector3::new(),
             eye_fov: 0.0,
             aspect_ratio: 0.0,
             near: 0.0,
@@ -25,15 +25,15 @@ impl Camera {
         }
     }
 
-    pub fn gaze_direct(mut self, g: VectorNew3) -> Self {
+    pub fn gaze_direct(mut self, g: Vector3) -> Self {
         self.gaze_direct = g;
         self
     }
-    pub fn up_direct(mut self, u: VectorNew3) -> Self {
+    pub fn up_direct(mut self, u: Vector3) -> Self {
         self.up_direct = u;
         self
     }
-    pub fn eye_position(mut self, e: VectorNew3) -> Self {
+    pub fn eye_position(mut self, e: Vector3) -> Self {
         self.eye_position = e;
         self
     }

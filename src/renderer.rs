@@ -2,8 +2,8 @@ use crate::pipeline::model::Triangle;
 
 use crate::{
     algebra::{
-        matrix_new::{MatrixNew4},
-        vector_new::{VectorNew3, VectorNew4, vector3},
+        matrix_new::{Matrix4},
+        vector_new::{Vector3, Vector4, vector3},
     },
     pipeline::{
         fragment_shader::{make_shader, FragmentShader},
@@ -97,8 +97,8 @@ impl Renderer {
     pub fn yaw_camera(&mut self, angle: f32) {
         let camera = self.camera.as_ref().unwrap();
         let e = &camera.eye_position;
-        let p = MatrixNew4::rotate_around_y_matrix(angle) * VectorNew4::point_from(e);
-        let p = VectorNew3::from(&p);
+        let p = Matrix4::rotate_around_y_matrix(angle) * Vector4::point_from(e);
+        let p = Vector3::from(&p);
 
         let y_axis = vector3([0.0, 1.0, 0.0]);
         let g = rotate_around_axis(&camera.gaze_direct, &y_axis, angle);
@@ -137,9 +137,9 @@ impl Renderer {
 
     pub fn zoom_camera(&mut self, length: f32) {
         let camera = self.camera.as_ref().unwrap();
-        let g = VectorNew4::vector_from(&camera.gaze_direct);
-        let p: VectorNew4 = VectorNew4::point_from(&camera.eye_position) + (g * length);
-        let p = VectorNew3::from(&p);
+        let g = Vector4::vector_from(&camera.gaze_direct);
+        let p: Vector4 = Vector4::point_from(&camera.eye_position) + (g * length);
+        let p = Vector3::from(&p);
         let new_camera = camera.clone().eye_position(p);
         self.shader.as_mut().unwrap().update_camera(&new_camera);
         self.camera = Some(new_camera);
@@ -162,7 +162,7 @@ impl Default for Renderer {
 
 /** Some functions **/
 
-fn rotate_around_axis(v: &VectorNew3, axis: &VectorNew3, angle: f32) -> VectorNew3 {
+fn rotate_around_axis(v: &Vector3, axis: &Vector3, angle: f32) -> Vector3 {
     v * angle.cos() + axis.cross(v) * angle.sin() + axis * axis.dot(v) * (1.0 - angle.cos())
 }
 
@@ -216,7 +216,7 @@ enum Plane {
     Far,
 }
 
-fn inside_plane(plane: Plane, p: &VectorNew4) -> bool {
+fn inside_plane(plane: Plane, p: &Vector4) -> bool {
     match plane {
         Plane::W => p.w() < -1.0e-5,
         Plane::Left => p.x() > p.w(),
@@ -228,7 +228,7 @@ fn inside_plane(plane: Plane, p: &VectorNew4) -> bool {
     }
 }
 
-fn get_interest_radio(plane: Plane, prev: &VectorNew4, curr: &VectorNew4) -> f32 {
+fn get_interest_radio(plane: Plane, prev: &Vector4, curr: &Vector4) -> f32 {
     let pw = prev.w();
     let cw = curr.w();
     match plane {
@@ -242,10 +242,10 @@ fn get_interest_radio(plane: Plane, prev: &VectorNew4, curr: &VectorNew4) -> f32
     }
 }
 
-fn interpolate_vector4f(v1: &VectorNew4, v2: &VectorNew4, t: f32) -> VectorNew4 {
+fn interpolate_vector4f(v1: &Vector4, v2: &Vector4, t: f32) -> Vector4 {
     v1 + &((v2 - v1) * t)
 }
-fn interpolate_vector3f(v1: &VectorNew3, v2: &VectorNew3, t: f32) -> VectorNew3 {
+fn interpolate_vector3f(v1: &Vector3, v2: &Vector3, t: f32) -> Vector3 {
     v1 + &((v2 - v1) * t)
 }
 
@@ -396,9 +396,9 @@ fn back_face_cull(vertexs: Vec<Vertex>) -> Vec<Vertex> {
     vertexs
         .chunks(3)
         .filter(|&vertexs| {
-            let p0 = VectorNew3::from(&vertexs[0].position);
-            let p1 = VectorNew3::from(&vertexs[1].position);
-            let p2 = VectorNew3::from(&vertexs[2].position);
+            let p0 = Vector3::from(&vertexs[0].position);
+            let p1 = Vector3::from(&vertexs[1].position);
+            let p2 = Vector3::from(&vertexs[2].position);
             let l1 = &p1 - &p0;
             let l2 = &p2 - &p0;
             let e = vector3([0.0, 0.0, 0.0]);
@@ -413,7 +413,7 @@ fn back_face_cull(vertexs: Vec<Vertex>) -> Vec<Vertex> {
         .collect()
 }
 
-fn transform_models_vertexs(vertexs: &mut [Vertex], transform_matrix: &MatrixNew4) {
+fn transform_models_vertexs(vertexs: &mut [Vertex], transform_matrix: &Matrix4) {
     vertexs.iter_mut().for_each(|v| {
         v.position = transform_matrix * &v.position;
     })

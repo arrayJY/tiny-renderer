@@ -1,13 +1,13 @@
-use crate::algebra::vector_new::{vector3, vector4, VectorNew3, VectorNew4};
+use crate::algebra::vector_new::{vector3, vector4, Vector3, Vector4};
 use crate::{ Color};
 use std::{collections::HashSet, convert::TryInto};
 use tobj;
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
-    pub position: VectorNew4,
-    pub world_position: Option<VectorNew4>,
-    pub normal: Option<VectorNew4>,
+    pub position: Vector4,
+    pub world_position: Option<Vector4>,
+    pub normal: Option<Vector4>,
     pub texture_coordinate: Option<(f32, f32)>,
     pub color: Option<Color>,
     pub material: Option<Material>,
@@ -16,9 +16,9 @@ pub struct Vertex {
 
 #[derive(Debug, Clone)]
 pub struct Material {
-    pub ambient_color: VectorNew3,  //Ka
-    pub diffuse_color: VectorNew3,  //Kd
-    pub specular_color: VectorNew3, //Ks
+    pub ambient_color: Vector3,  //Ka
+    pub diffuse_color: Vector3,  //Kd
+    pub specular_color: Vector3, //Ks
     pub shininess: f32,             //Ns
     pub optical_density: f32,       //Ni
     pub dissolve: f32,              //d
@@ -37,9 +37,9 @@ pub struct Triangle {
 }
 
 impl Triangle {
-    pub fn get_barycenter(&self) -> VectorNew4 {
+    pub fn get_barycenter(&self) -> Vector4 {
         const C: f32 = 1.0f32 / 3.0f32;
-        let mut r = VectorNew4::new();
+        let mut r = Vector4::new();
         let iter = {
             let i = self.vertexs.iter();
             let j = self.vertexs.iter().cycle().skip(1);
@@ -66,7 +66,7 @@ impl Model {
         assert!(obj.is_ok());
         let (models, meterials) = obj.unwrap();
 
-        fn to_vector3f(c: &[f32; 3]) -> VectorNew3 {
+        fn to_vector3f(c: &[f32; 3]) -> Vector3 {
             vector3([c[0], c[1], c[2]])
             /*
                        Color {

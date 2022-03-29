@@ -1,7 +1,7 @@
-use super::{matrix4, MatrixNew4};
+use super::{matrix4, Matrix4};
 
-impl MatrixNew4 {
-    pub fn translation_matrix(x: f32, y: f32, z: f32) -> MatrixNew4 {
+impl Matrix4 {
+    pub fn translation_matrix(x: f32, y: f32, z: f32) -> Matrix4 {
         matrix4([
             [1.0, 0.0, 0.0, x],
             [0.0, 1.0, 0.0, y],
@@ -10,7 +10,7 @@ impl MatrixNew4 {
         ])
     }
 
-    pub fn scale_matrix(sx: f32, sy: f32, sz: f32) -> MatrixNew4 {
+    pub fn scale_matrix(sx: f32, sy: f32, sz: f32) -> Matrix4 {
         matrix4([
             [sx, 0.0, 0.0, 0.0],
             [0.0, sy, 0.0, 0.0],
@@ -18,7 +18,7 @@ impl MatrixNew4 {
             [0.0, 0.0, 0.0, 1.0],
         ])
     }
-    pub fn rotate_around_x_matrix(angle: f32) -> MatrixNew4 {
+    pub fn rotate_around_x_matrix(angle: f32) -> Matrix4 {
         let sina = angle.sin();
         let cosa = angle.cos();
         matrix4([
@@ -28,7 +28,7 @@ impl MatrixNew4 {
             [0.0, 0.0, 0.0, 1.0],
         ])
     }
-    pub fn rotate_around_y_matrix(angle: f32) -> MatrixNew4 {
+    pub fn rotate_around_y_matrix(angle: f32) -> Matrix4 {
         let sina = angle.sin();
         let cosa = angle.cos();
         matrix4([
@@ -38,7 +38,7 @@ impl MatrixNew4 {
             [0.0, 0.0, 0.0, 1.0],
         ])
     }
-    pub fn rotate_around_z_matrix(angle: f32) -> MatrixNew4 {
+    pub fn rotate_around_z_matrix(angle: f32) -> Matrix4 {
         let sina = angle.sin();
         let cosa = angle.cos();
         matrix4([

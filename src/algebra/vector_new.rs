@@ -2,9 +2,9 @@ mod ops;
 
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq)]
-pub struct VectorNew<const N: usize>(pub [f32; N]);
+pub struct Vector<const N: usize>(pub [f32; N]);
 
-impl<const N: usize> VectorNew<N> {
+impl<const N: usize> Vector<N> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -47,14 +47,14 @@ impl<const N: usize> VectorNew<N> {
     }
 }
 
-impl<const N: usize> Default for VectorNew<N> {
+impl<const N: usize> Default for Vector<N> {
     fn default() -> Self {
         Self([f32::default(); N])
     }
 }
 
-impl<const N: usize, const M: usize> From<&VectorNew<M>> for VectorNew<N> {
-    fn from(other: &VectorNew<M>) -> Self {
+impl<const N: usize, const M: usize> From<&Vector<M>> for Vector<N> {
+    fn from(other: &Vector<M>) -> Self {
         let mut r = Self::new();
         r.0.iter_mut()
             .zip(other.0.iter())
@@ -63,8 +63,8 @@ impl<const N: usize, const M: usize> From<&VectorNew<M>> for VectorNew<N> {
     }
 }
 
-pub type VectorNew3 = VectorNew<3>;
-pub type VectorNew4 = VectorNew<4>;
+pub type Vector3 = Vector<3>;
+pub type Vector4 = Vector<4>;
 
 macro_rules! def_getter {
     ($func: ident, $func_mut: ident, $index: expr) => {
@@ -77,7 +77,7 @@ macro_rules! def_getter {
     };
 }
 
-impl VectorNew3 {
+impl Vector3 {
     def_getter!(x, x_mut, 0);
     def_getter!(y, y_mut, 1);
     def_getter!(z, z_mut, 2);
@@ -90,13 +90,13 @@ impl VectorNew3 {
     }
 }
 
-impl VectorNew4 {
+impl Vector4 {
     def_getter!(x, x_mut, 0);
     def_getter!(y, y_mut, 1);
     def_getter!(z, z_mut, 2);
     def_getter!(w, w_mut, 3);
 
-    pub fn point_from(v: &VectorNew3) -> Self {
+    pub fn point_from(v: &Vector3) -> Self {
         let mut r = Self::new();
         *r.x_mut() = v.x();
         *r.y_mut() = v.y();
@@ -105,7 +105,7 @@ impl VectorNew4 {
         r
     }
 
-    pub fn vector_from(v: &VectorNew3) -> Self {
+    pub fn vector_from(v: &Vector3) -> Self {
         let mut r = Self::new();
         *r.x_mut() = v.x();
         *r.y_mut() = v.y();
@@ -117,8 +117,8 @@ impl VectorNew4 {
 
 macro_rules! def_vector_func {
     ($func: ident, $n: expr) => {
-        pub fn $func(data: [f32; $n]) -> VectorNew<$n> {
-            VectorNew::<$n>(data)
+        pub fn $func(data: [f32; $n]) -> Vector<$n> {
+            Vector::<$n>(data)
         }
     };
 }
