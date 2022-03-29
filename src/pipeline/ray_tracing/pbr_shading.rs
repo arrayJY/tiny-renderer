@@ -1,4 +1,4 @@
-use crate::{Color, pipeline::model::Triangle, algebra::vector::Vector4f};
+use crate::{Color, pipeline::model::Triangle, algebra::vector_new::VectorNew4};
 
 type FrameBuffer = Vec<Option<Color>>;
 
@@ -11,7 +11,7 @@ pub fn pbr_shade(width: usize, height: usize, triangles: Vec<Triangle>) -> Frame
     framebuffer
 }
 
-fn shade_pixel(x: (usize, usize), wo: &Vector4f) {
+fn shade_pixel(x: (usize, usize), wo: &VectorNew4) {
 
     // Contribute from the light source.
     

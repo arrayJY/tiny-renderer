@@ -4,7 +4,9 @@ macro_rules! impl_scalar_ops {
             type Output = $type<N>;
             fn $func(self, rhs: f32) -> Self::Output {
                 let mut m = Self::Output::new();
-                m.data_iter_mut().for_each(|v| *v = *v $op rhs);
+                m.data_iter_mut()
+                    .zip(self.data_iter())
+                    .for_each(|(l, &r)| *l = r $op rhs);
                 m
             }
         }
@@ -13,7 +15,9 @@ macro_rules! impl_scalar_ops {
             type Output = $type<N>;
             fn $func(self, rhs: f32) -> Self::Output {
                 let mut m = Self::Output::new();
-                m.data_iter_mut().for_each(|v| *v = *v $op rhs);
+                m.data_iter_mut()
+                    .zip(self.data_iter())
+                    .for_each(|(l, &r)| *l = r $op rhs);
                 m
             }
         }
@@ -72,6 +76,7 @@ macro_rules! impl_assign_ops {
                         *l $op r;
                     });
             }
+
         }
     };
 }

@@ -79,6 +79,12 @@ impl<const N: usize> MatrixNew<N> {
     pub fn data_iter_mut(&mut self) -> impl Iterator<Item = &mut f32> {
         self.0.iter_mut().flat_map(|v| v.iter_mut())
     }
+
+    pub fn unit() -> Self {
+        let mut m = Self::new();
+        m.data_iter_mut().for_each(|v| *v = 1.0);
+        m
+    }
 }
 
 impl<const N: usize> MatrixNew<N> {
@@ -150,12 +156,11 @@ pub type MatrixNew4 = MatrixNew<4>;
 
 macro_rules! def_matrix_func {
     ($func: ident, $n: expr) => {
-        pub fn $func(data: [[f32; $n]; $n]) -> MatrixNew::<$n> {
+        pub fn $func(data: [[f32; $n]; $n]) -> MatrixNew<$n> {
             MatrixNew::<$n>(data)
         }
     };
 }
-
 
 def_matrix_func!(matrix3, 3);
 def_matrix_func!(matrix4, 4);

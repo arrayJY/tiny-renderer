@@ -1,10 +1,10 @@
-use crate::{algebra::vector::Vector3f, *};
+use crate::algebra::vector_new::{vector3, VectorNew3};
 use std::f32::consts::PI;
 #[derive(Debug, Clone)]
 pub struct Camera {
-    pub gaze_direct: Vector3f,
-    pub up_direct: Vector3f,
-    pub eye_position: Vector3f,
+    pub gaze_direct: VectorNew3,
+    pub up_direct: VectorNew3,
+    pub eye_position: VectorNew3,
     pub eye_fov: f32,
     pub aspect_ratio: f32,
     pub near: f32,
@@ -15,9 +15,9 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         Camera {
-            gaze_direct: Vector3f::new(),
-            up_direct: Vector3f::new(),
-            eye_position: Vector3f::new(),
+            gaze_direct: VectorNew3::new(),
+            up_direct: VectorNew3::new(),
+            eye_position: VectorNew3::new(),
             eye_fov: 0.0,
             aspect_ratio: 0.0,
             near: 0.0,
@@ -25,15 +25,15 @@ impl Camera {
         }
     }
 
-    pub fn gaze_direct(mut self, g: Vector3f) -> Self {
+    pub fn gaze_direct(mut self, g: VectorNew3) -> Self {
         self.gaze_direct = g;
         self
     }
-    pub fn up_direct(mut self, u: Vector3f) -> Self {
+    pub fn up_direct(mut self, u: VectorNew3) -> Self {
         self.up_direct = u;
         self
     }
-    pub fn eye_position(mut self, e: Vector3f) -> Self {
+    pub fn eye_position(mut self, e: VectorNew3) -> Self {
         self.eye_position = e;
         self
     }
@@ -59,9 +59,9 @@ impl Camera {
 impl Default for Camera {
     fn default() -> Self {
         Camera {
-            gaze_direct: vector3f!(-1.0, -1.0, -1.0).normalized(),
-            up_direct: vector3f!(-1.0, 1.0, -1.0).normalized(),
-            eye_position: vector3f!(3.0, 3.0, 3.0),
+            gaze_direct: vector3([-1.0, -1.0, -1.0]).normalized(),
+            up_direct: vector3([-1.0, 1.0, -1.0]).normalized(),
+            eye_position: vector3([3.0, 3.0, 3.0]),
             eye_fov: PI / 2.0,
             aspect_ratio: 1.0,
             near: 0.1,

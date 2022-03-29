@@ -1,12 +1,13 @@
-use crate::{algebra::vector::{Vector4f, Vector3f}, Color, *};
+use crate::algebra::vector_new::{vector3, vector4, VectorNew3, VectorNew4};
+use crate::{ Color};
 use std::{collections::HashSet, convert::TryInto};
 use tobj;
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
-    pub position: Vector4f,
-    pub world_position: Option<Vector4f>,
-    pub normal: Option<Vector4f>,
+    pub position: VectorNew4,
+    pub world_position: Option<VectorNew4>,
+    pub normal: Option<VectorNew4>,
     pub texture_coordinate: Option<(f32, f32)>,
     pub color: Option<Color>,
     pub material: Option<Material>,
@@ -15,12 +16,12 @@ pub struct Vertex {
 
 #[derive(Debug, Clone)]
 pub struct Material {
-    pub ambient_color: Vector3f,  //Ka
-    pub diffuse_color: Vector3f,  //Kd
-    pub specular_color: Vector3f, //Ks
-    pub shininess: f32,        //Ns
-    pub optical_density: f32,  //Ni
-    pub dissolve: f32,         //d
+    pub ambient_color: VectorNew3,  //Ka
+    pub diffuse_color: VectorNew3,  //Kd
+    pub specular_color: VectorNew3, //Ks
+    pub shininess: f32,             //Ns
+    pub optical_density: f32,       //Ni
+    pub dissolve: f32,              //d
 }
 
 #[allow(dead_code)]
@@ -36,9 +37,9 @@ pub struct Triangle {
 }
 
 impl Triangle {
-    pub fn get_barycenter(&self) -> Vector4f {
+    pub fn get_barycenter(&self) -> VectorNew4 {
         const C: f32 = 1.0f32 / 3.0f32;
-        let mut r = Vector4f::new();
+        let mut r = VectorNew4::new();
         let iter = {
             let i = self.vertexs.iter();
             let j = self.vertexs.iter().cycle().skip(1);
@@ -65,16 +66,16 @@ impl Model {
         assert!(obj.is_ok());
         let (models, meterials) = obj.unwrap();
 
-        fn to_vector3f(c: &[f32; 3]) -> Vector3f {
-            vector3f!(c[0], c[1], c[2])
+        fn to_vector3f(c: &[f32; 3]) -> VectorNew3 {
+            vector3([c[0], c[1], c[2]])
             /*
-            Color {
-                r: (c[0] * 255f32) as u8,
-                g: (c[1] * 255f32) as u8,
-                b: (c[2] * 255f32) as u8,
-                a: (d * 255f32) as u8,
-            }
- */
+                       Color {
+                           r: (c[0] * 255f32) as u8,
+                           g: (c[1] * 255f32) as u8,
+                           b: (c[2] * 255f32) as u8,
+                           a: (d * 255f32) as u8,
+                       }
+            */
         }
 
         models
@@ -97,7 +98,7 @@ impl Model {
                     .map(|i| {
                         let p = &mesh.positions;
                         //Point homogeneous coordinates: (x, y, z) -> (x, y, z, 1.0)
-                        vector4f!(p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 1.0)
+                        vector4([p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 1.0])
                     })
                     .collect::<Vec<_>>();
 
@@ -109,7 +110,7 @@ impl Model {
                         .map(|i| {
                             let p = &mesh.normals;
                             //Vector homogeneous coordinates: (x, y, z) -> (x, y, z, 0.0)
-                            Some(vector4f!(p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 0.0).normalized())
+                            Some(vector4([p[i * 3], p[i * 3 + 1], p[i * 3 + 2], 0.0]).normalized())
                         })
                         .collect::<Vec<_>>()
                 };

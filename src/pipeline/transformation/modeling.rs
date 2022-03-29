@@ -1,26 +1,26 @@
-use crate::algebra::matrix::Matrix4f;
+use crate::algebra::matrix_new::MatrixNew4;
 pub struct Modeling {
-    pub transform_matrix: Matrix4f,
+    pub transform_matrix: MatrixNew4,
 }
 
 #[allow(dead_code)]
 impl Modeling {
     pub fn new() -> Self {
         Modeling {
-            transform_matrix: Matrix4f::unit(),
+            transform_matrix: MatrixNew4::unit(),
         }
     }
 
-    pub fn modeling_martix(&self) -> &Matrix4f {
+    pub fn modeling_martix(&self) -> &MatrixNew4 {
         &self.transform_matrix
     }
 
     pub fn translate(self, (x, y, z): (f32, f32, f32)) -> Self {
-        self.transform(&Matrix4f::translation_matrix(x, y, z))
+        self.transform(&MatrixNew4::translation_matrix(x, y, z))
     }
 
     pub fn scale(self, (sx, sy, sz): (f32, f32, f32)) -> Self {
-        self.transform(&Matrix4f::scale_matrix(sx, sy, sz))
+        self.transform(&MatrixNew4::scale_matrix(sx, sy, sz))
     }
 
     pub fn rotate_around_x(self, angle: f32) -> Self {
@@ -37,15 +37,15 @@ impl Modeling {
 
     fn rotate_around_axis(self, angle: f32, axis: &str) -> Self {
         let rotate_matrix = match axis {
-            "x" => Matrix4f::rotate_around_x_matrix(angle),
-            "y" => Matrix4f::rotate_around_y_matrix(angle),
-            "z" => Matrix4f::rotate_around_z_matrix(angle),
+            "x" => MatrixNew4::rotate_around_x_matrix(angle),
+            "y" => MatrixNew4::rotate_around_y_matrix(angle),
+            "z" => MatrixNew4::rotate_around_z_matrix(angle),
             _ => panic!("Rotate around unexpected axis."),
         };
         self.transform(&rotate_matrix)
     }
 
-    fn transform(mut self, matrix: &Matrix4f) -> Self {
+    fn transform(mut self, matrix: &MatrixNew4) -> Self {
         self.transform_matrix = matrix * &self.transform_matrix;
         self
     }

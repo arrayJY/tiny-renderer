@@ -1,6 +1,6 @@
 use super::VectorNew;
 use crate::algebra::matrix_new::MatrixNew;
-use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign, Index, IndexMut};
+use std::ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Neg, Sub, SubAssign};
 
 impl_basic_ops!(Add, add, +, VectorNew);
 impl_basic_ops!(Sub, sub, -, VectorNew);
@@ -15,8 +15,8 @@ impl<const N: usize> Mul<VectorNew<N>> for MatrixNew<N> {
         let mut m = Self::Output::new();
         for i in 0..N {
             unsafe {
-                let r1 = *rhs.0.get_unchecked(i);
                 for j in 0..N {
+                    let r1 = *rhs.0.get_unchecked(j);
                     let l = m.0.get_unchecked_mut(i);
                     *l += r1 * self.get_unchecked(i, j);
                 }
@@ -35,8 +35,8 @@ where
         let mut m = Self::Output::new();
         for i in 0..N {
             unsafe {
-                let r1 = *rhs.0.get_unchecked(i);
                 for j in 0..N {
+                    let r1 = *rhs.0.get_unchecked(j);
                     let l = m.0.get_unchecked_mut(i);
                     *l += r1 * self.get_unchecked(i, j);
                 }
@@ -45,7 +45,6 @@ where
         m
     }
 }
-
 
 impl<const N: usize> Index<usize> for VectorNew<N> {
     type Output = f32;
@@ -60,3 +59,13 @@ impl<const N: usize> IndexMut<usize> for VectorNew<N> {
     }
 }
 
+impl<const N: usize> Neg for VectorNew<N> {
+    type Output = VectorNew<N>;
+    fn neg(self) -> Self::Output {
+        let mut m = Self::Output::new();
+        m.data_iter_mut()
+            .zip(self.data_iter())
+            .for_each(|(l, r)| *l = -*r);
+        m
+    }
+}

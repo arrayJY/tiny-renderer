@@ -1,7 +1,7 @@
-use crate::algebra::vector::Vector4f;
+use crate::algebra::vector_new::VectorNew4;
 
 pub struct AreaLight {
     pub r: f32,
-    pub point: Vector4f,  //center
-    pub normal: Vector4f  //normal 
+    pub point: VectorNew4,  //center
+    pub normal: VectorNew4  //normal 
 }

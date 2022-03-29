@@ -1,14 +1,14 @@
 use crate::{
-    algebra::vector::Vector3f,
+    algebra::vector_new::{VectorNew3, vector3},
     pipeline::{camera::Camera, light::Light, model::Triangle, texture::Texture},
     renderer::Renderer,
-    Color, *,
+    Color, *
 };
 
 use super::{FragmentShader};
 
 pub struct PhongShader {
-    pub eye_position: Vector3f,
+    pub eye_position: VectorNew3,
     pub light: Light,
     pub texture: Option<Texture>,
 }
@@ -48,13 +48,13 @@ impl FragmentShader for PhongShader {
         } else {
             interpolate!(triangle, color; barycenter)
         };
-        let position = Vector3f::from_vec4f(&interpolate!(triangle, world_position; barycenter));
-        let normal = Vector3f::from_vec4f(&interpolate!(triangle, normal; barycenter));
+        let position = VectorNew3::from(&interpolate!(triangle, world_position; barycenter));
+        let normal = VectorNew3::from(&interpolate!(triangle, normal; barycenter));
 
-        let ambient_light_intensity = vector3f!(10.0, 10.0, 10.0);
-        let ka = vector3f!(0.005, 0.005, 0.005);
-        let kd = vector3f!(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0);
-        let ks = vector3f!(0.8, 0.8, 0.8);
+        let ambient_light_intensity = vector3([10.0, 10.0, 10.0]);
+        let ka = vector3([0.005, 0.005, 0.005]);
+        let kd = vector3([r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0]);
+        let ks = vector3([0.8, 0.8, 0.8]);
         let p = 150;
 
         let eye_positon = &self.eye_position;

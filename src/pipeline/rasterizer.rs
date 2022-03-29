@@ -1,8 +1,8 @@
 use core::f32;
 
-use algebra::vector::Vector3f;
+use crate::algebra::vector_new::{vector3};
+use crate::Color;
 
-use crate::*;
 
 use super::{fragment_shader::FragmentShader, model::Triangle};
 
@@ -130,10 +130,10 @@ impl Rasterizer {
         let b = &triangle.vertexs[1].position;
         let c = &triangle.vertexs[2].position;
 
-        let pp = vector3f!(x as f32 + 0.5, y as f32 + 0.5, 0.0);
-        let pa = vector3f!(a.x(), a.y(), a.z());
-        let pb = vector3f!(b.x(), b.y(), b.z());
-        let pc = vector3f!(c.x(), c.y(), c.z());
+        let pp = vector3([x as f32 + 0.5, y as f32 + 0.5, 0.0]);
+        let pa = vector3([a.x(), a.y(), a.z()]);
+        let pb = vector3([b.x(), b.y(), b.z()]);
+        let pc = vector3([c.x(), c.y(), c.z()]);
 
         let ab = &pb - &pa;
         let bc = &pc - &pb;

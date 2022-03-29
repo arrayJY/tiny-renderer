@@ -71,6 +71,17 @@ fn matrix_transpose() {
 }
 
 #[test]
+fn matrix_unit() {
+    let m1 = MatrixNew::<3>([
+        [1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0],
+    ]);
+    let m2 = MatrixNew::<3>::unit();
+    assert_eq!(m2, m1);
+}
+
+#[test]
 fn normalize_vector() {
     let mut v = VectorNew::<3>([0.0, 0.0, 2.0]);
     v.normalize();

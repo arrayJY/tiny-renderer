@@ -32,6 +32,19 @@ impl<const N: usize> VectorNew<N> {
         let norm = self.norm();
         self.data_iter_mut().for_each(|v| *v /= norm);
     }
+
+    pub fn normalized(mut self) -> Self {
+        self.normalize();
+        self
+    }
+
+    pub fn cwise_product(&self, other: &Self) -> Self {
+        let mut m = Self::new();
+        m.data_iter_mut()
+            .zip(self.data_iter().zip(other.data_iter()))
+            .for_each(|(l, (&r1, &r2))| *l = r1 * r2);
+        m
+    }
 }
 
 impl<const N: usize> Default for VectorNew<N> {
@@ -63,7 +76,6 @@ macro_rules! def_getter {
         }
     };
 }
-   
 
 impl VectorNew3 {
     def_getter!(x, x_mut, 0);
@@ -76,7 +88,6 @@ impl VectorNew3 {
         *m.z_mut() = self.x() * rhs.y() - self.y() * rhs.x();
         m
     }
-
 }
 
 impl VectorNew4 {
@@ -84,11 +95,29 @@ impl VectorNew4 {
     def_getter!(y, y_mut, 1);
     def_getter!(z, z_mut, 2);
     def_getter!(w, w_mut, 3);
+
+    pub fn point_from(v: &VectorNew3) -> Self {
+        let mut r = Self::new();
+        *r.x_mut() = v.x();
+        *r.y_mut() = v.y();
+        *r.z_mut() = v.z();
+        *r.w_mut() = 1.0;
+        r
+    }
+
+    pub fn vector_from(v: &VectorNew3) -> Self {
+        let mut r = Self::new();
+        *r.x_mut() = v.x();
+        *r.y_mut() = v.y();
+        *r.z_mut() = v.z();
+        *r.w_mut() = 0.0;
+        r
+    }
 }
 
 macro_rules! def_vector_func {
     ($func: ident, $n: expr) => {
-        pub fn $func(data: [f32; $n]) -> VectorNew::<$n> {
+        pub fn $func(data: [f32; $n]) -> VectorNew<$n> {
             VectorNew::<$n>(data)
         }
     };
