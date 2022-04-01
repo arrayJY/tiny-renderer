@@ -1,4 +1,7 @@
 use std::ops::{Mul, Add};
+
+use crate::algebra::vector_new::{Vector3, Vector4};
+#[repr(C)]
 #[derive(Debug, Clone)]
 pub struct Color {
     pub r: u8,
@@ -33,6 +36,28 @@ impl Add for Color {
             g: self.g + rhs.g,
             b: self.b + rhs.b,
             a: self.a,
+        }
+    }
+}
+
+impl From<&Vector3> for Color{
+    fn from(v: &Vector3) -> Self {
+        Self {
+            r: v.x() as u8,
+            g: v.y() as u8,
+            b: v.z() as u8,
+            a: 255,
+        }
+    }
+}
+
+impl From<&Vector4> for Color{
+    fn from(v: &Vector4) -> Self {
+        Self {
+            r: v.x() as u8,
+            g: v.y() as u8,
+            b: v.z() as u8,
+            a: v.w() as u8,
         }
     }
 }

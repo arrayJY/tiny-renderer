@@ -1,33 +1,29 @@
 use core::f32;
 
-use crate::algebra::vector_new::{vector3};
+use crate::algebra::vector_new::vector3;
 use crate::Color;
 
-
+use super::model::TriangulatedModel;
 use super::{fragment_shader::FragmentShader, model::Triangle};
 
 #[allow(dead_code)]
 pub struct Rasterizer {
-    pub triangles: Vec<Triangle>,
-    pub z_buffer: Vec<f32>,
+    // pub triangles: Vec<Triangle>,
+    pub models: Vec<TriangulatedModel>,
     pub width: usize,
     pub height: usize,
+    pub z_buffer: Vec<f32>,
 }
 
 #[allow(dead_code)]
 impl Rasterizer {
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: usize, height: usize, models: Vec<TriangulatedModel>) -> Self {
         Self {
-            triangles: Vec::new(),
-            z_buffer: vec![f32::MAX; width * height],
+            models,
             width,
             height,
+            z_buffer: vec![f32::MAX; width * height],
         }
-    }
-
-    pub fn triangles(mut self, triangles: Vec<Triangle>) -> Self {
-        self.triangles = triangles;
-        self
     }
 
     pub fn rasterize(&mut self, shader: &Box<dyn FragmentShader>) -> Vec<Option<Color>> {
@@ -35,24 +31,31 @@ impl Rasterizer {
         let mut frame_buffer = vec![None; self.height * self.width];
         let width = self.width;
 
-        self.triangles.iter().for_each(|triangle| {
-            let (min_x, min_y, max_x, max_y) = Rasterizer::bounding_box(triangle);
-            let coord_iter = (min_x..max_x).flat_map(move |a| (min_y..max_y).map(move |b| (a, b)));
+        self
+            .models
+            .iter()
+            .for_each(|model| {
+                model.triangles.iter().for_each(|triangle| {
+                    let (min_x, min_y, max_x, max_y) = Rasterizer::bounding_box(triangle);
+                    let coord_iter =
+                        (min_x..max_x).flat_map(move |a| (min_y..max_y).map(move |b| (a, b)));
 
-            coord_iter.for_each(|(x, y)| {
-                let barycenter = Rasterizer::barycentric_2d(x as f32, y as f32, triangle);
-                if Rasterizer::inside_triangle_by_barycenter(barycenter) {
-                    let index = y * width + x;
-                    let z = -Rasterizer::z_interpolation(triangle, barycenter);
-                    if z < z_buffer[index] {
-                        let barycenter = Rasterizer::perspective_correct(triangle, barycenter);
-                        let color = shader.shade(triangle, barycenter, z);
-                        frame_buffer[index] = Some(color);
-                        z_buffer[index] = z;
-                    }
-                }
-            })
-        });
+                    coord_iter.for_each(|(x, y)| {
+                        let barycenter = Rasterizer::barycentric_2d(x as f32, y as f32, triangle);
+                        if Rasterizer::inside_triangle_by_barycenter(barycenter) {
+                            let index = y * width + x;
+                            let z = -Rasterizer::z_interpolation(triangle, barycenter);
+                            if z < z_buffer[index] {
+                                let barycenter =
+                                    Rasterizer::perspective_correct(triangle, barycenter);
+                                let color = shader.shade(model, triangle, barycenter, z);
+                                frame_buffer[index] = Some(color);
+                                z_buffer[index] = z;
+                            }
+                        }
+                    })
+                });
+            });
 
         frame_buffer
     }
@@ -147,7 +150,7 @@ impl Rasterizer {
             || (ab.cross(&ap).z() < 0.0 && bc.cross(&bp).z() < 0.0 && ca.cross(&cp).z() < 0.0)
     }
 
-    fn inside_triangle_by_barycenter((alpha, beta, gamma) : (f32, f32, f32)) -> bool {
+    fn inside_triangle_by_barycenter((alpha, beta, gamma): (f32, f32, f32)) -> bool {
         !(alpha < 0.0 || beta < 0.0 || gamma < 0.0)
     }
 }

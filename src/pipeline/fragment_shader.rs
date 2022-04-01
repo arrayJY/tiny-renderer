@@ -1,4 +1,4 @@
-use super::{camera::Camera, light::Light, model::Triangle};
+use super::{camera::Camera, light::Light, model::{Triangle, TriangulatedModel}};
 use crate::{renderer::Renderer, Color};
 pub mod color_shader;
 pub mod phong_shader;
@@ -6,7 +6,7 @@ pub mod texture_shader;
 pub mod z_shader;
 
 pub trait FragmentShader {
-    fn shade(&self, triangle: &Triangle, barycenter: (f32, f32, f32), z: f32) -> Color;
+    fn shade(&self, model: &TriangulatedModel, triangle: &Triangle, barycenter: (f32, f32, f32), z: f32) -> Color;
     fn update_camera(&mut self, camera: &Camera);
     fn update_light(&mut self, light: &Light);
 }
@@ -15,6 +15,7 @@ pub use color_shader::ColorShader;
 pub use phong_shader::PhongShader;
 pub use texture_shader::TextureShader;
 pub use z_shader::ZShader;
+
 
 pub fn make_shader(name: &str, path: &str, renderer: &Renderer) -> Option<Box<dyn FragmentShader>> {
     match name.to_lowercase().as_ref() {

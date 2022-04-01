@@ -117,7 +117,7 @@ impl Vector4 {
 
 macro_rules! def_vector_func {
     ($func: ident, $n: expr) => {
-        pub fn $func(data: [f32; $n]) -> Vector<$n> {
+        pub const fn $func(data: [f32; $n]) -> Vector<$n> {
             Vector::<$n>(data)
         }
     };

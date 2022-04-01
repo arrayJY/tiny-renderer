@@ -1,11 +1,16 @@
 use crate::{
-    algebra::vector_new::{Vector3, vector3},
-    pipeline::{camera::Camera, light::Light, model::Triangle, texture::Texture},
+    algebra::vector_new::{vector3, Vector3},
+    pipeline::{
+        camera::Camera,
+        light::Light,
+        model::{Triangle, TriangulatedModel},
+        texture::Texture,
+    },
     renderer::Renderer,
-    Color, *
+    Color, *,
 };
 
-use super::{FragmentShader};
+use super::FragmentShader;
 
 pub struct PhongShader {
     pub eye_position: Vector3,
@@ -40,21 +45,41 @@ impl PhongShader {
     }
 }
 
+const DEFAULT_KD: Vector3 = vector3([127.0, 127.0, 127.0]);
+const DEFAULT_KA: Vector3 = vector3([0.005, 0.005, 0.005]);
+const DEFAULT_KS: Vector3 = vector3([0.8, 0.8, 0.8]);
+
 impl FragmentShader for PhongShader {
-    fn shade(&self, triangle: &Triangle, barycenter: (f32, f32, f32), _: f32) -> Color {
-        let Color { r, g, b, .. } = if let Some(texture) = &self.texture {
+    fn shade(
+        &self,
+        model: &TriangulatedModel,
+        triangle: &Triangle,
+        barycenter: (f32, f32, f32),
+        _: f32,
+    ) -> Color {
+        let kd = if let Some(texture) = &self.texture {
             let (u, v) = interpolate_uv!(triangle, texture_coordinate; barycenter);
-            texture.get(u, v)
+            let color = texture.get(u, v);
+            vector3([color.r as f32, color.g as f32, color.b as f32]) / 255.0
         } else {
-            interpolate!(triangle, color; barycenter)
+            model
+                .material
+                .as_ref()
+                .map_or(DEFAULT_KD, |m| m.diffuse_color.clone())
+            // interpolate!(triangle, color; barycenter)
         };
         let position = Vector3::from(&interpolate!(triangle, world_position; barycenter));
         let normal = Vector3::from(&interpolate!(triangle, normal; barycenter));
-
         let ambient_light_intensity = vector3([10.0, 10.0, 10.0]);
-        let ka = vector3([0.005, 0.005, 0.005]);
-        let kd = vector3([r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0]);
-        let ks = vector3([0.8, 0.8, 0.8]);
+        let ka = model
+            .material
+            .as_ref()
+            .map_or(DEFAULT_KA, |m| m.ambient_color.clone());
+        // let kd = vector3([r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0]);
+        let ks = model
+            .material
+            .as_ref()
+            .map_or(DEFAULT_KS, |m| m.specular_color.clone());
         let p = 150;
 
         let eye_positon = &self.eye_position;

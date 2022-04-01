@@ -1,6 +1,11 @@
 use super::FragmentShader;
+use crate::pipeline::model::TriangulatedModel;
 use crate::pipeline::{model::Triangle, texture::Texture};
-use crate::{pipeline::{camera::Camera, light::Light}, Color, interpolate_uv};
+use crate::{
+    interpolate_uv,
+    pipeline::{camera::Camera, light::Light},
+    Color,
+};
 
 pub struct TextureShader {
     texture: Texture,
@@ -23,7 +28,13 @@ impl TextureShader {
 }
 
 impl FragmentShader for TextureShader {
-    fn shade(&self, triangle: &Triangle, barycenter: (f32, f32, f32), _: f32) -> Color {
+    fn shade(
+        &self,
+        _: &TriangulatedModel,
+        triangle: &Triangle,
+        barycenter: (f32, f32, f32),
+        _: f32,
+    ) -> Color {
         let (u, v) = interpolate_uv!(triangle, texture_coordinate; barycenter);
         self.texture.get(u, v)
     }

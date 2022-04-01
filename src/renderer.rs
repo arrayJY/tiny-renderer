@@ -1,25 +1,19 @@
-use crate::pipeline::model::Triangle;
-
 use crate::{
     algebra::{
-        matrix_new::{Matrix4},
-        vector_new::{Vector3, Vector4, vector3},
+        matrix_new::Matrix4,
+        vector_new::{vector3, Vector3, Vector4},
     },
     pipeline::{
+        camera::Camera,
         fragment_shader::{make_shader, FragmentShader},
         light::Light,
-        model::{Vertex, Material},
+        model::Model,
+        model::{Triangle, TriangulatedModel, Vertex},
+        rasterizer::Rasterizer,
+        transformation::Transformation,
     },
 };
-use crate::{
-    pipeline::{
-        camera::Camera, model::Model, rasterizer::Rasterizer, transformation::Transformation,
-    },
-    window::FramebufferWindow,
-    Color,
-};
-
-use std::ops::{Add, Mul, Sub};
+use crate::{window::FramebufferWindow, Color};
 
 #[allow(dead_code)]
 pub struct Renderer {
@@ -83,10 +77,10 @@ impl Renderer {
             .unwrap_or_else(|| panic!("No fragment shader found."));
 
         //Transformation
-        let triangles = triangles_from_models(models, camera, width, height);
+        let models = triangulated_models(models, camera, width, height);
 
         //Rasterization && Shading
-        let mut rasterizer = Rasterizer::new(width, height).triangles(triangles);
+        let mut rasterizer = Rasterizer::new(width, height, models);
         let frame_buffer = rasterizer.rasterize(fragment_shader);
 
         //Generate Bitmap
@@ -166,28 +160,30 @@ fn rotate_around_axis(v: &Vector3, axis: &Vector3, angle: f32) -> Vector3 {
     v * angle.cos() + axis.cross(v) * angle.sin() + axis * axis.dot(v) * (1.0 - angle.cos())
 }
 
-fn triangles_from_models(
+fn triangulated_models(
     models: &[Model],
     camera: &Camera,
     width: usize,
     height: usize,
-) -> Vec<Triangle> {
+) -> Vec<TriangulatedModel> {
     models
         .iter()
         .map(|model| {
             let model = model.clone();
             mvp_viewport_transform(model, camera, width, height)
         })
-        .flatten()
+        .map(|mut model| {
+            homogeneous_division(&mut model.vertexs);
+            model
+        })
+        .map(|model| TriangulatedModel {
+            triangles: primitive_assembly(model.vertexs),
+            material: model.material,
+        })
         .collect::<Vec<_>>()
 }
 
-fn mvp_viewport_transform(
-    mut model: Model,
-    camera: &Camera,
-    width: usize,
-    height: usize,
-) -> Vec<Triangle> {
+fn mvp_viewport_transform(mut model: Model, camera: &Camera, width: usize, height: usize) -> Model {
     // No modeling transformation for now
     let view = Transformation::view_matrix(camera);
     let projection = Transformation::perspective_projection_transform(camera);
@@ -197,12 +193,12 @@ fn mvp_viewport_transform(
     transform_models_vertexs(&mut model.vertexs, &projection);
 
     // let mut vertexs = homogeneous_clip(model, camera);
-    let vertexs = complete_homogeneous_clip(model);
+    let vertexs = complete_homogeneous_clip(&model);
     let mut vertexs = back_face_cull(vertexs);
     triangles_w_reciprocal(&mut vertexs);
     transform_models_vertexs(&mut vertexs, &viewport);
-    homogeneous_division(&mut vertexs);
-    primitive_assembly(vertexs)
+    model.vertexs = vertexs;
+    model
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -245,9 +241,6 @@ fn get_interest_radio(plane: Plane, prev: &Vector4, curr: &Vector4) -> f32 {
 fn interpolate_vector4f(v1: &Vector4, v2: &Vector4, t: f32) -> Vector4 {
     v1 + &((v2 - v1) * t)
 }
-fn interpolate_vector3f(v1: &Vector3, v2: &Vector3, t: f32) -> Vector3 {
-    v1 + &((v2 - v1) * t)
-}
 
 macro_rules! interpolate_option {
     ($v1: expr, $v2: expr, $t: expr) => {{
@@ -274,55 +267,10 @@ macro_rules! interpolate_option_pair {
 }
 
 fn interpolate_vertex(v1: &Vertex, v2: &Vertex, t: f32) -> Vertex {
-    fn interpolate_scalar<T: Copy>(v1: T, v2: T, t: f32) -> T
-    where
-        T: Copy + Add<T, Output = T> + Sub<T, Output = T> + Mul<f32, Output = T>,
-    {
-        return v1 + (v2 - v1) * t;
-    }
-    fn interpolate_color(c1: &Color, c2: &Color, t: f32) -> Color {
-        let (r1, g1, b1, a1) = (c1.r as f32, c1.g as f32, c1.b as f32, c1.a as f32);
-        let (r2, g2, b2, a2) = (c2.r as f32, c2.g as f32, c2.b as f32, c2.a as f32);
-        Color {
-            r: interpolate_scalar(r1, r2, t) as u8,
-            g: interpolate_scalar(g1, g2, t) as u8,
-            b: interpolate_scalar(b1, b2, t) as u8,
-            a: interpolate_scalar(a1, a2, t) as u8,
-        }
-    }
-
     Vertex {
         position: interpolate_vector4f(&v1.position, &v2.position, t),
         world_position: interpolate_option!(&v1.world_position, &v2.world_position, t),
         normal: interpolate_option!(&v1.normal, &v2.normal, t),
-        color: {
-            if v1.color.is_some() && v2.color.is_some() {
-                let (c1, c2) = (v1.color.as_ref().unwrap(), v2.color.as_ref().unwrap());
-                Some(interpolate_color(c1, c2, t))
-                /*
-                let v1_color = v1.color.as_ref().unwrap();
-                let v1_color = vector3f!(v1_color.r as f32, v1_color.g as f32, v1_color.b as f32);
-                let v2_color = v2.color.as_ref().unwrap();
-                let v2_color = vector3f!(v2_color.r as f32, v2_color.g as f32, v2_color.b as f32);
-                let v = interpolate_vector3f(&v1_color, &v2_color, t);
-                Some(Color::rgb(v.x() as u8, v.y() as u8, v.z() as u8))
-                */
-            } else {
-                None
-            }
-        },
-        material: if let (Some(m1), Some(m2)) = (v1.material.as_ref() , v2.material.as_ref()) {
-            Some(Material {
-                ambient_color: interpolate_vector3f(&m1.ambient_color,& m2.ambient_color, t),
-                diffuse_color: interpolate_vector3f(&m1.diffuse_color,& m2.diffuse_color, t),
-                specular_color: interpolate_vector3f(&m1.specular_color,& m2.specular_color, t),
-                shininess: interpolate_scalar(m1.shininess, m2.shininess, t),
-                optical_density: interpolate_scalar(m1.optical_density, m2.optical_density, t),
-                dissolve: interpolate_scalar(m1.dissolve, m2.dissolve, t),
-            })
-        } else {
-            None
-        },
         w_reciprocal: interpolate_option!(&v1.w_reciprocal, &v2.w_reciprocal, t),
         texture_coordinate: interpolate_option_pair!(
             &v1.texture_coordinate,
@@ -353,7 +301,7 @@ fn clip_plane(plane: Plane, vertexs: Vec<Vertex>) -> Vec<Vertex> {
     vertexs
 }
 
-fn complete_homogeneous_clip(model: Model) -> Vec<Vertex> {
+fn complete_homogeneous_clip(model: &Model) -> Vec<Vertex> {
     let vertex_groups = model
         .indices
         .iter()
