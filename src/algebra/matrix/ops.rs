@@ -1,8 +1,8 @@
 use super::Matrix;
 use generic_array::typenum::Unsigned;
 use generic_array::ArrayLength;
-use std::{iter::Sum, ops::Div};
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign};
+use std::{iter::Sum, ops::Div};
 use typenum::Prod;
 
 macro_rules! impl_basic_ops {

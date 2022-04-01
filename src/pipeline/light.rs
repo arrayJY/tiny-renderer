@@ -1,4 +1,4 @@
-use crate::{algebra::vector_new::{Vector3, vector3}};
+use crate::algebra::vector_new::{vector3, Vector3};
 
 #[derive(Debug, Clone)]
 pub struct Light {
@@ -15,7 +15,7 @@ impl Default for Light {
     }
 }
 
-impl Light{
+impl Light {
     pub fn position(mut self, position: Vector3) -> Self {
         self.position = position;
         self

@@ -1,4 +1,4 @@
-use std::ops::{Mul, Add};
+use std::ops::{Add, Mul};
 
 use crate::algebra::vector_new::{Vector3, Vector4};
 #[repr(C)]
@@ -40,7 +40,7 @@ impl Add for Color {
     }
 }
 
-impl From<&Vector3> for Color{
+impl From<&Vector3> for Color {
     fn from(v: &Vector3) -> Self {
         Self {
             r: v.x() as u8,
@@ -51,7 +51,7 @@ impl From<&Vector3> for Color{
     }
 }
 
-impl From<&Vector4> for Color{
+impl From<&Vector4> for Color {
     fn from(v: &Vector4) -> Self {
         Self {
             r: v.x() as u8,

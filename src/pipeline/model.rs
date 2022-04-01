@@ -1,5 +1,5 @@
 use crate::algebra::vector_new::{vector3, vector4, Vector3, Vector4};
-use std::{convert::TryInto};
+use std::convert::TryInto;
 use tobj;
 
 #[derive(Debug, Clone)]

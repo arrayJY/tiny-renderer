@@ -69,12 +69,12 @@ where
     }
 
     pub unsafe fn get_unchecked(&self, row: usize, col: usize) -> &T {
-        let cols= self.cols();
+        let cols = self.cols();
         self.data.get_unchecked(row * cols + col)
     }
 
     pub unsafe fn get_unchecked_mut(&mut self, row: usize, col: usize) -> &mut T {
-        let cols= self.cols();
+        let cols = self.cols();
         self.data.get_unchecked_mut(row * cols + col)
     }
 

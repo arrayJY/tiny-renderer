@@ -31,31 +31,27 @@ impl Rasterizer {
         let mut frame_buffer = vec![None; self.height * self.width];
         let width = self.width;
 
-        self
-            .models
-            .iter()
-            .for_each(|model| {
-                model.triangles.iter().for_each(|triangle| {
-                    let (min_x, min_y, max_x, max_y) = Rasterizer::bounding_box(triangle);
-                    let coord_iter =
-                        (min_x..max_x).flat_map(move |a| (min_y..max_y).map(move |b| (a, b)));
+        self.models.iter().for_each(|model| {
+            model.triangles.iter().for_each(|triangle| {
+                let (min_x, min_y, max_x, max_y) = Rasterizer::bounding_box(triangle);
+                let coord_iter =
+                    (min_x..max_x).flat_map(move |a| (min_y..max_y).map(move |b| (a, b)));
 
-                    coord_iter.for_each(|(x, y)| {
-                        let barycenter = Rasterizer::barycentric_2d(x as f32, y as f32, triangle);
-                        if Rasterizer::inside_triangle_by_barycenter(barycenter) {
-                            let index = y * width + x;
-                            let z = -Rasterizer::z_interpolation(triangle, barycenter);
-                            if z < z_buffer[index] {
-                                let barycenter =
-                                    Rasterizer::perspective_correct(triangle, barycenter);
-                                let color = shader.shade(model, triangle, barycenter, z);
-                                frame_buffer[index] = Some(color);
-                                z_buffer[index] = z;
-                            }
+                coord_iter.for_each(|(x, y)| {
+                    let barycenter = Rasterizer::barycentric_2d(x as f32, y as f32, triangle);
+                    if Rasterizer::inside_triangle_by_barycenter(barycenter) {
+                        let index = y * width + x;
+                        let z = -Rasterizer::z_interpolation(triangle, barycenter);
+                        if z < z_buffer[index] {
+                            let barycenter = Rasterizer::perspective_correct(triangle, barycenter);
+                            let color = shader.shade(model, triangle, barycenter, z);
+                            frame_buffer[index] = Some(color);
+                            z_buffer[index] = z;
                         }
-                    })
-                });
+                    }
+                })
             });
+        });
 
         frame_buffer
     }

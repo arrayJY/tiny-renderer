@@ -1,5 +1,5 @@
 use super::Matrix;
-use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign, Index, IndexMut};
+use std::ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Sub, SubAssign};
 
 impl_basic_ops!(Add, add, +, Matrix);
 impl_basic_ops!(Sub, sub, -, Matrix);
@@ -47,7 +47,6 @@ where
     }
 }
 
-
 impl<const N: usize> Index<usize> for Matrix<N> {
     type Output = [f32; N];
     fn index(&self, index: usize) -> &Self::Output {
@@ -60,4 +59,3 @@ impl<const N: usize> IndexMut<usize> for Matrix<N> {
         &mut self.0[index]
     }
 }
-

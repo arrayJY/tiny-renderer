@@ -9,13 +9,7 @@ pub struct ColorShader;
 const DEFAULT_COLOR: Vector3 = vector3([255.0, 255.0, 255.0]);
 
 impl FragmentShader for ColorShader {
-    fn shade(
-        &self,
-        model: &TriangulatedModel,
-        _: &Triangle,
-        _: (f32, f32, f32),
-        _: f32,
-    ) -> Color {
+    fn shade(&self, model: &TriangulatedModel, _: &Triangle, _: (f32, f32, f32), _: f32) -> Color {
         model
             .material
             .as_ref()

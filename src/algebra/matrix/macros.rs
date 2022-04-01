@@ -84,7 +84,6 @@ macro_rules! matrix2f {
     }
 }
 
-
 #[macro_export]
 macro_rules! matrix3f {
     () => {
@@ -98,7 +97,6 @@ macro_rules! matrix3f {
         }
     }
 }
-
 
 #[macro_export]
 macro_rules! matrix4f {

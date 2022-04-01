@@ -1,9 +1,9 @@
-pub mod transformation;
-pub mod model;
 pub mod camera;
-pub mod rasterizer;
-pub mod fragment_shader;
 pub mod color;
-pub mod texture;
+pub mod fragment_shader;
 pub mod light;
+pub mod model;
+pub mod rasterizer;
 pub mod ray_tracing;
+pub mod texture;
+pub mod transformation;

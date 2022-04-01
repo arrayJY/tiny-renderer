@@ -6,5 +6,5 @@ pub struct Node<T: Default> {
 }
 
 pub struct Tree<T: Default> {
-    pub root: Node<T>
+    pub root: Node<T>,
 }

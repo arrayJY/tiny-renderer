@@ -3,7 +3,6 @@ use generic_array::{ArrayLength, GenericArrayIter};
 use std::ops::Mul;
 use typenum::{Prod, Unsigned};
 
-
 impl<T, Row, Col> IntoIterator for Matrix<T, Row, Col>
 where
     T: Default,

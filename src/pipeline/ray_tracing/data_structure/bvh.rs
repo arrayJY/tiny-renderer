@@ -1,5 +1,5 @@
 use crate::algebra::vector_new::Vector4;
-use crate::pipeline::model::{Triangle};
+use crate::pipeline::model::Triangle;
 
 use super::tree::Node;
 use super::tree::Tree;
@@ -23,11 +23,26 @@ impl BVHTree {
 
         let mut node_indexs: Vec<Option<usize>> = vec![None; triangles.len()];
 
-        BVHTree::build_tree_leaves(&mut barycenters, &mut node_indexs, 0, triangles.len(), 1, &funcs, 0);
+        BVHTree::build_tree_leaves(
+            &mut barycenters,
+            &mut node_indexs,
+            0,
+            triangles.len(),
+            1,
+            &funcs,
+            0,
+        );
         let mut tree = Tree {
-            root: BVHTreeNode::default()
+            root: BVHTreeNode::default(),
         };
-        BVHTree::build_tree(triangles, &mut node_indexs, &mut tree.root, 1, 0, triangles.len());
+        BVHTree::build_tree(
+            triangles,
+            &mut node_indexs,
+            &mut tree.root,
+            1,
+            0,
+            triangles.len(),
+        );
         tree
     }
 
@@ -45,9 +60,9 @@ impl BVHTree {
             node.r = Some(Box::new(BVHTreeNode::default()));
 
             let left = node.l.as_mut().unwrap().as_mut();
-            let right= node.r.as_mut().unwrap().as_mut();
+            let right = node.r.as_mut().unwrap().as_mut();
             BVHTree::build_tree(triangles, node_indexs, left, i * 2, l, median);
-            BVHTree::build_tree(triangles, node_indexs, right, i * 2 + 1, median+ 1, r);
+            BVHTree::build_tree(triangles, node_indexs, right, i * 2 + 1, median + 1, r);
         } else {
             node.val = Some(triangles[l..r].to_vec())
         }
@@ -122,12 +137,12 @@ impl BVHTree {
         r: usize,
         f: impl Fn(&Vector4) -> f32,
     ) -> usize {
-        // let x = 
+        // let x =
         let mut i = p - 1;
         for j in p..r - 1 {
             let m = f(&barycenters[j]);
             let n = f(&barycenters[r]);
-            if m < n{
+            if m < n {
                 i += 1;
                 barycenters.swap(i, j);
             }

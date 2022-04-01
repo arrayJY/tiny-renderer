@@ -27,8 +27,20 @@ impl Texture {
     }
     pub fn get(&self, u: f32, v: f32) -> Color {
         //Handle some out of bound uv.
-        let u  = if u < 0.0 { 0.0 } else if u > 1.0 { 1.0 } else { u };
-        let v  = if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v };
+        let u = if u < 0.0 {
+            0.0
+        } else if u > 1.0 {
+            1.0
+        } else {
+            u
+        };
+        let v = if v < 0.0 {
+            0.0
+        } else if v > 1.0 {
+            1.0
+        } else {
+            v
+        };
 
         let x = u * self.width - 1.0;
         let y = self.height - 1.0 - v * self.height;
