@@ -45,9 +45,10 @@ impl PhongShader {
     }
 }
 
-const DEFAULT_KD: Vector3 = vector3([127.0, 127.0, 127.0]);
-const DEFAULT_KA: Vector3 = vector3([0.005, 0.005, 0.005]);
+const DEFAULT_KD: Vector3 = vector3([0.5, 0.5, 0.5]);
+const DEFAULT_KA: Vector3 = vector3([1.0, 1.0, 1.0]);
 const DEFAULT_KS: Vector3 = vector3([0.8, 0.8, 0.8]);
+const AMBIENT_INTENSITY: Vector3 = vector3([0.2, 0.2, 0.2]);
 
 impl FragmentShader for PhongShader {
     fn shade(
@@ -70,12 +71,10 @@ impl FragmentShader for PhongShader {
         };
         let position = Vector3::from(&interpolate!(triangle, world_position; barycenter));
         let normal = Vector3::from(&interpolate!(triangle, normal; barycenter));
-        let ambient_light_intensity = vector3([10.0, 10.0, 10.0]);
         let ka = model
             .material
             .as_ref()
             .map_or(DEFAULT_KA, |m| m.ambient_color.clone());
-        // let kd = vector3([r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0]);
         let ks = model
             .material
             .as_ref()
@@ -95,7 +94,7 @@ impl FragmentShader for PhongShader {
 
         let r = (light_position - &position).norm();
 
-        let ambient = ka.cwise_product(&ambient_light_intensity);
+        let ambient = ka.cwise_product(&AMBIENT_INTENSITY);
         let diffuse = kd * (*intensity / (r * r) * max(0.0, n.dot(&l)));
         let specular = ks * (*intensity / (r * r) * max(0.0, n.dot(&h)).powi(p));
 
