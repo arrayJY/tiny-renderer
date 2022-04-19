@@ -238,7 +238,7 @@ fn get_interest_radio(plane: Plane, prev: &Vector4, curr: &Vector4) -> f32 {
     }
 }
 
-fn interpolate_vector4f(v1: &Vector4, v2: &Vector4, t: f32) -> Vector4 {
+pub fn interpolate_vector4(v1: &Vector4, v2: &Vector4, t: f32) -> Vector4 {
     v1 + &((v2 - v1) * t)
 }
 
@@ -268,8 +268,8 @@ macro_rules! interpolate_option_pair {
 
 fn interpolate_vertex(v1: &Vertex, v2: &Vertex, t: f32) -> Vertex {
     Vertex {
-        position: interpolate_vector4f(&v1.position, &v2.position, t),
-        world_position: interpolate_option!(&v1.world_position, &v2.world_position, t),
+        position: interpolate_vector4(&v1.position, &v2.position, t),
+        world_position: interpolate_vector4(&v1.world_position, &v2.world_position, t),
         normal: interpolate_option!(&v1.normal, &v2.normal, t),
         w_reciprocal: interpolate_option!(&v1.w_reciprocal, &v2.w_reciprocal, t),
         texture_coordinate: interpolate_option_pair!(

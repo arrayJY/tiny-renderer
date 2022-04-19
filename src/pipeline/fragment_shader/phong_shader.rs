@@ -69,7 +69,7 @@ impl FragmentShader for PhongShader {
                 .map_or(DEFAULT_KD, |m| m.diffuse_color.clone())
             // interpolate!(triangle, color; barycenter)
         };
-        let position = Vector3::from(&interpolate!(triangle, world_position; barycenter));
+        let position = Vector3::from(&interpolate_triangle!(triangle, world_position; barycenter));
         let normal = Vector3::from(&interpolate!(triangle, normal; barycenter));
         let ka = model
             .material

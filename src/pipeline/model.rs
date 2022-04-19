@@ -5,7 +5,7 @@ use tobj;
 #[derive(Debug, Clone)]
 pub struct Vertex {
     pub position: Vector4,
-    pub world_position: Option<Vector4>,
+    pub world_position: Vector4,
     pub normal: Option<Vector4>,
     pub texture_coordinate: Option<(f32, f32)>,
     // pub color: Option<Color>,
@@ -143,7 +143,7 @@ impl Model {
                     .map(|(position, normal, texture_coordinate)| Vertex {
                         position: position.clone(),
                         //Reserve positions in world space for fragment shader.
-                        world_position: Some(position.clone()),
+                        world_position: position.clone(),
                         normal: normal.clone(),
                         texture_coordinate: texture_coordinate.clone(),
                         // color: None,

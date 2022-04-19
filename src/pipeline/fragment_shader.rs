@@ -38,6 +38,17 @@ pub fn make_shader(name: &str, path: &str, renderer: &Renderer) -> Option<Box<dy
 }
 
 #[macro_export]
+macro_rules! interpolate_triangle {
+    ($triangle: tt, $attr: ident; $barycenter: expr) => {{
+        let (alpha, beta, gamma) = $barycenter;
+        let v1 = &$triangle.vertexs[0].$attr;
+        let v2 = &$triangle.vertexs[1].$attr;
+        let v3 = &$triangle.vertexs[2].$attr;
+        v1 * alpha + v2 * beta + v3 * gamma
+    }};
+}
+
+#[macro_export]
 macro_rules! interpolate {
     ($triangle: tt, $attr: ident; $barycenter: expr) => {{
         let (alpha, beta, gamma) = $barycenter;
