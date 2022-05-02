@@ -16,6 +16,7 @@ Tiny renderer is available in **Windows, Linux and MacOSX** now.
 You can run with `cargo`.
 ```
 cargo run --release [shader] [path]
+cargo run --release pbr [path] [ssp]
 ```
 `shader` is the name of fragment shader.
 
@@ -42,6 +43,7 @@ There are some simple models in `static` directory.
 - `earth`
 - `earth_good`
 - `spot`
+- `cornell-box`
 
 Don't forget `--release` flag because of its poor performance.
 
@@ -57,6 +59,7 @@ Don't forget `--release` flag because of its poor performance.
 | ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_earth.gif) |   `cargo run --release texture static/earth`    |
 | ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_cube.gif) |       `cargo run --release z static/cube`       |
 | ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_spot.gif) | `cargo run --release phong-texture static/spot` |
+| ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_path_tracing.png) | `cargo run --release pbr static/cornell-box 512` |
 |                                                              |                                               |
 
 
