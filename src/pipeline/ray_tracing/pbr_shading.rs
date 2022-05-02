@@ -10,7 +10,7 @@ use crate::{
     Color,
 };
 use rand::Rng;
-use std::{f32::consts::PI, rc::Rc};
+use std::{f32::consts::PI, sync::Arc};
 
 use super::data_structure::bvh::{BVHNode, BVHTree, AABB};
 
@@ -22,7 +22,7 @@ pub struct RayTracer {
     pub shaded_count: usize,
     pub width: usize,
     pub height: usize,
-    pub pixel_iter: Box<dyn Iterator<Item = (usize, usize)>>,
+    // pub pixel_iter: Box<dyn Iterator<Item = (usize, usize)>>,
     pub ssp: usize,
 }
 
@@ -35,11 +35,12 @@ impl RayTracer {
         ssp: usize,
     ) -> Self {
         let objects_tree = BVHTree::from_triangles(&triangles.as_slice());
-        let pixel_iter = Box::new(
+        /* let pixel_iter = Box::new(
             (0..width)
                 .flat_map(move |a| (0..height).map(move |b| (a, b)))
                 .cycle(),
         );
+        */
         let bounding_boxes = objects
             .iter()
             .map(|model| AABB::from(&model.triangles[..]))
@@ -52,7 +53,7 @@ impl RayTracer {
             shaded_count: 0,
             width,
             height,
-            pixel_iter,
+            // pixel_iter,
             ssp,
         };
         ray_tracer
@@ -83,22 +84,6 @@ impl RayTracer {
             .collect()
     }
 
-    pub fn shade_next_pixel(&mut self) {
-        let count = self.shaded_count;
-        let total = self.framebuffer.len() * self.ssp;
-        if count > total {
-            return;
-        }
-
-        if let Some((x, y)) = self.pixel_iter.next() {
-            let ray = self.pixel_to_ray(x, y);
-            let color = &self.shade(&ray, 0) / self.ssp as f32;
-            let index = y * self.width + x;
-            *self.framebuffer.get_mut(index).unwrap() += color;
-            self.shaded_count += 1;
-        }
-    }
-
     pub fn render(path: &str, ssp: usize) {
         use indicatif::{ProgressBar, ProgressStyle};
         const WIDTH: usize = 800;
@@ -106,21 +91,45 @@ impl RayTracer {
         let models = Model::from_obj(path);
         let (objects, triangles) = triangulated_models_and_triangles(&models, (WIDTH / 2) as f32);
         let mut ray_tracer = RayTracer::new(WIDTH, HEIGHT, triangles, objects, ssp);
-        let shade_times = WIDTH * HEIGHT * ssp;
-        let bar = ProgressBar::new(shade_times as u64);
 
-        let style_string = format!("Rendering {}, {}x{}, {} ssp...\n", path, WIDTH, HEIGHT, ssp);
-        let style_string = format!(
-            "{} {}",
-            style_string, "[{elapsed_precise}] {bar} {percent}%"
-        );
+        println!("Rendering {}, {}x{}, {} ssp...\n", path, WIDTH, HEIGHT, ssp);
+        const CPU_NUM: usize = 8;
+        const LINE: usize = HEIGHT / CPU_NUM;
+        let mut framebuffer = vec![Vector3::new(); WIDTH * HEIGHT];
+        let multi_bar = indicatif::MultiProgress::new();
+        let progress_style = ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+            .progress_chars("##-");
 
-        bar.set_style(ProgressStyle::default_bar().template(&style_string));
-        for _ in 0..shade_times {
-            ray_tracer.shade_next_pixel();
-            bar.inc(1);
-        }
-        bar.finish();
+        std::thread::scope(|scope| {
+            let multi_bar = &multi_bar;
+            let ray_tracer = &ray_tracer;
+            framebuffer
+                .chunks_mut(WIDTH * HEIGHT / CPU_NUM)
+                .enumerate()
+                .for_each(|(i, s)| {
+                    let pb = multi_bar.add(ProgressBar::new((s.len() * ssp) as u64));
+                    pb.set_style(progress_style.clone());
+                    scope.spawn(move || {
+                        pb.set_message(format!("thread #{}", i + 1));
+                        for _ in 0..ssp {
+                            let start = i * LINE;
+                            let pixel_iter = (start..start + LINE)
+                                .flat_map(move |a| (0..WIDTH).map(move |b| (a, b)));
+                            s.iter_mut().zip(pixel_iter).for_each(|(p, (y, x))| {
+                                let ray = ray_tracer.pixel_to_ray(x, y);
+                                *p += ray_tracer.shade(&ray, 0) / ssp as f32;
+                                pb.inc(1);
+                            })
+                        }
+                        pb.finish_with_message("done");
+                    });
+                });
+            multi_bar.join().unwrap();
+        });
+
+        ray_tracer.framebuffer = framebuffer;
+
         let mut window = PBRWindow::new(WIDTH, HEIGHT);
         window.run(ray_tracer)
     }
@@ -132,7 +141,7 @@ pub struct HitResult {
     pub normal: Vector3,
     pub distance: f32,
     pub emit: Option<Vector3>,
-    pub material: Option<Rc<Material>>,
+    pub material: Option<Arc<Material>>,
 }
 
 impl HitResult {
@@ -146,11 +155,9 @@ impl RayTracer {
         let intersection = self.get_nearest_intersection(ray);
 
         if let Some(intersection) = intersection {
-            if let Some(emit) = intersection.emit {
+            if intersection.emit.is_some() {
                 return vector3([1.0, 1.0, 1.0]);
-                // return emit / intersection.distance.powf(2.0);
             }
-            // return Vector3::new();
 
             let wo = -&ray.dir;
             let p = &intersection.position;
@@ -237,7 +244,7 @@ impl RayTracer {
                             normal,
                             distance,
                             emit: material.as_ref().and_then(|m| m.emit.clone()),
-                            material 
+                            material,
                         });
                     } else {
                         return None;

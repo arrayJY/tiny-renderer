@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     algebra::{
@@ -370,7 +370,7 @@ fn complete_homogeneous_clip(model: &Model) -> Vec<Vertex> {
     new_vertexs
 }
 
-fn primitive_assembly(vertexs: Vec<Vertex>, material: &Option<Rc<Material>>) -> Vec<Triangle> {
+fn primitive_assembly(vertexs: Vec<Vertex>, material: &Option<Arc<Material>>) -> Vec<Triangle> {
     vertexs
         .chunks(3)
         .map(|vertexs| Triangle {

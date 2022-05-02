@@ -1,3 +1,4 @@
+#![feature(scoped_threads)]
 pub use pipeline::color::Color;
 
 pub mod algebra;

@@ -4,7 +4,7 @@ use rand::prelude::SliceRandom;
 use rand::Rng;
 use std::convert::TryInto;
 use std::f32::consts::PI;
-use std::rc::Rc;
+use std::sync::Arc;
 use tobj;
 
 use super::ray_tracing::pbr_shading::HitResult;
@@ -96,13 +96,13 @@ impl Material {
 pub struct Model {
     pub indices: Vec<[u32; 3]>,
     pub vertexs: Vec<Vertex>,
-    pub material: Option<Rc<Material>>,
+    pub material: Option<Arc<Material>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct TriangulatedModel {
     pub triangles: Vec<Triangle>,
-    pub material: Option<Rc<Material>>,
+    pub material: Option<Arc<Material>>,
 }
 
 impl TriangulatedModel {
@@ -144,7 +144,7 @@ impl TriangulatedModel {
 #[derive(Debug, Clone)]
 pub struct Triangle {
     pub vertexs: Vec<Vertex>,
-    pub material: Option<Rc<Material>>,
+    pub material: Option<Arc<Material>>,
 }
 
 impl Triangle {
@@ -280,7 +280,7 @@ impl Model {
                     let ns = m.shininess;
                     let ni = m.optical_density;
 
-                    Some(Rc::new(Material {
+                    Some(Arc::new(Material {
                         ambient_color: to_vector3f(ka),
                         diffuse_color: to_vector3f(kd),
                         specular_color: to_vector3f(ks),
