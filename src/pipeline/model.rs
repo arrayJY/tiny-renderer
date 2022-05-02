@@ -55,9 +55,9 @@ impl Material {
         match self.material_type {
             MaterialType::Diffuse => {
                 // if wo.dot(n) > 0.0 {
-                    0.5 / PI
+                0.5 / PI
                 // } else {
-                    // 0.0
+                // 0.0
                 // }
             }
         }

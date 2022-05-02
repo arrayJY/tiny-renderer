@@ -11,8 +11,7 @@ use std::f32::consts::PI;
 
 impl FramebufferWindow {
     pub fn new(width: usize, height: usize) -> FramebufferWindow {
-        let window =
-            Window::new("TinyRenderer", width, height, WindowOptions::default()).unwrap();
+        let window = Window::new("TinyRenderer", width, height, WindowOptions::default()).unwrap();
         // window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
         FramebufferWindow {
             private_window: window,

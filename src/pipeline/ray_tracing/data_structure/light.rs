@@ -1,9 +1,7 @@
 use rand::{prelude::SliceRandom, Rng};
 
 use crate::{
-    algebra::vector_new::Vector3,
-    interpolate, interpolate_triangle,
-    pipeline::{model::Triangle},
+    algebra::vector_new::Vector3, interpolate, interpolate_triangle, pipeline::model::Triangle,
 };
 
 pub struct AreaLight {

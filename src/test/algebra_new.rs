@@ -72,11 +72,7 @@ fn matrix_transpose() {
 
 #[test]
 fn matrix_unit() {
-    let m1 = Matrix::<3>([
-        [1.0, 1.0, 1.0],
-        [1.0, 1.0, 1.0],
-        [1.0, 1.0, 1.0],
-    ]);
+    let m1 = Matrix::<3>([[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]);
     let m2 = Matrix::<3>::unit();
     assert_eq!(m2, m1);
 }

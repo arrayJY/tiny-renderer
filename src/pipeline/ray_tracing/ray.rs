@@ -1,6 +1,6 @@
 use crate::{algebra::vector_new::Vector3, pipeline::model::Triangle};
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Vector3,
     pub dir: Vector3,

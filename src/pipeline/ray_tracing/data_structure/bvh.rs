@@ -92,7 +92,6 @@ impl AABB {
             (tz_min, tz_max)
         };
 
-
         let t_enter = tx_min.max(ty_min).max(tz_min);
         let t_exit = tx_max.min(ty_max).min(tz_max);
 
