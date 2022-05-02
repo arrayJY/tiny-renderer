@@ -1,69 +1,251 @@
 use crate::{
     algebra::vector_new::{vector3, Vector3},
-    interpolate_triangle,
-    pipeline::{model::Triangle, ray_tracing::ray::Ray},
-    Color, interpolate,
+    interpolate, interpolate_triangle,
+    pipeline::{
+        model::{Material, Model, Triangle, TriangulatedModel},
+        ray_tracing::ray::Ray,
+    },
+    renderer::triangulated_models_and_triangles,
+    window::pbr_window::PBRWindow,
+    Color,
 };
 use rand::Rng;
-use std::f32::consts::PI;
+use std::{f32::consts::PI, rc::Rc};
 
-use super::data_structure::{bvh::{BVHNode, BVHTree}, light::AreaLight};
-
-type FrameBuffer = Vec<Option<Color>>;
-
-pub fn pbr_shade(width: usize, height: usize, triangles: Vec<Triangle>) -> FrameBuffer {
-    let mut framebuffer: FrameBuffer = vec![None; width * height];
-
-    framebuffer
-}
+use super::data_structure::bvh::{BVHNode, BVHTree, AABB};
 
 pub struct RayTracer {
-    objects: BVHTree,
-    light: AreaLight
+    pub objects_tree: BVHTree,
+    pub objects: Vec<TriangulatedModel>,
+    pub bounding_boxes: Vec<AABB>,
+    pub framebuffer: Vec<Vector3>,
+    pub shaded_count: usize,
+    pub width: usize,
+    pub height: usize,
+    pub pixel_iter: Box<dyn Iterator<Item = (usize, usize)>>,
+    pub ssp: usize,
+}
+
+impl RayTracer {
+    pub fn new(
+        width: usize,
+        height: usize,
+        triangles: Vec<Triangle>,
+        objects: Vec<TriangulatedModel>,
+        ssp: usize,
+    ) -> Self {
+        let objects_tree = BVHTree::from_triangles(&triangles.as_slice());
+        let pixel_iter = Box::new(
+            (0..width)
+                .flat_map(move |a| (0..height).map(move |b| (a, b)))
+                .cycle(),
+        );
+        let bounding_boxes = objects
+            .iter()
+            .map(|model| AABB::from(&model.triangles[..]))
+            .collect::<Vec<_>>();
+        let ray_tracer = Self {
+            objects,
+            objects_tree,
+            bounding_boxes,
+            framebuffer: vec![Vector3::new(); width * height],
+            shaded_count: 0,
+            width,
+            height,
+            pixel_iter,
+            ssp,
+        };
+        ray_tracer
+    }
+
+    pub fn pixel_to_ray(&self, x: usize, y: usize) -> Ray {
+        const FOV: f32 = PI / 2.0;
+        let scale: f32 = (FOV / 2.0).tan();
+
+        let (width, height) = (self.width as f32, self.height as f32);
+        let (x, y) = (x as f32, y as f32);
+        let aspect_radio = width / height;
+
+        let x = (2.0 * (x) / width - 1.0) * scale * aspect_radio;
+        let y = (1.0 - 2.0 * (y) / height) * scale;
+
+        let dir = vector3([x, y, -1.0]).normalized();
+        let origin_z = self.width as f32;
+        let origin = vector3([0.0, 0.0, origin_z]);
+
+        Ray { origin, dir }
+    }
+
+    pub fn frame_buffer<'a>(&self) -> Vec<u32> {
+        self.framebuffer
+            .iter()
+            .map(|v| (&Color::from(v)).into())
+            .collect()
+    }
+
+    pub fn shade_next_pixel(&mut self) {
+        let count = self.shaded_count;
+        let total = self.framebuffer.len() * self.ssp;
+        if count > total {
+            return;
+        }
+
+        if let Some((x, y)) = self.pixel_iter.next() {
+            let ray = self.pixel_to_ray(x, y);
+            let color = &self.shade(&ray, 0) / self.ssp as f32;
+            let index = y * self.width + x;
+            *self.framebuffer.get_mut(index).unwrap() += color;
+            self.shaded_count += 1;
+        }
+    }
+
+    pub fn render(path: &str, ssp: usize) {
+        use indicatif::{ProgressBar, ProgressStyle};
+        const WIDTH: usize = 800;
+        const HEIGHT: usize = 800;
+        let models = Model::from_obj(path);
+        let (objects, triangles) = triangulated_models_and_triangles(&models, (WIDTH / 2) as f32);
+        let mut ray_tracer = RayTracer::new(WIDTH, HEIGHT, triangles, objects, ssp);
+        let shade_times = WIDTH * HEIGHT * ssp;
+        let bar = ProgressBar::new(shade_times as u64);
+
+        let style_string = format!("Rendering {}, {}x{}, {} ssp...\n", path, WIDTH, HEIGHT, ssp);
+        let style_string = format!(
+            "{} {}",
+            style_string, "[{elapsed_precise}] {bar} {percent}%"
+        );
+
+        bar.set_style(ProgressStyle::default_bar().template(&style_string));
+        for _ in 0..shade_times {
+            ray_tracer.shade_next_pixel();
+            bar.inc(1);
+        }
+        bar.finish();
+        let mut window = PBRWindow::new(WIDTH, HEIGHT);
+        window.run(ray_tracer)
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct HitResult {
-    position: Vector3,
-    normal: Vector3,
-    distance: f32,
+    pub position: Vector3,
+    pub normal: Vector3,
+    pub distance: f32,
+    pub emit: Option<Vector3>,
+    pub material: Option<Rc<Material>>,
+}
+
+impl HitResult {
+    pub fn material_eval(&self, wi: &Vector3, wo: &Vector3, n: &Vector3) -> Vector3 {
+        self.material.as_ref().unwrap().eval(wi, wo, n)
+    }
 }
 
 impl RayTracer {
-    pub fn shade_pixel(&self, p: &Vector3, wo: &Vector3) -> f32 {
-        // Contribute from the light source.
-        // TODO: Uniformly sample the light at x' (pdf = 1 / A)
-        let l_dir = 0.0f32;
-        let (xp, xn) = self.light.random_point();
+    pub fn shade(&self, ray: &Ray, depth: usize) -> Vector3 {
+        let intersection = self.get_nearest_intersection(ray);
 
+        if let Some(intersection) = intersection {
+            if let Some(emit) = intersection.emit {
+                return vector3([1.0, 1.0, 1.0]);
+                // return emit / intersection.distance.powf(2.0);
+            }
+            // return Vector3::new();
 
-        // Contribute from other reflectors.
-        let mut l_indir = 0.0f32;
-        const P_RR: f32 = 0.8;
-        let ksi = rand::thread_rng().gen_range(0.0..1.0f32);
-        if ksi > P_RR {
-            return 0.0;
+            let wo = -&ray.dir;
+            let p = &intersection.position;
+            let n = &intersection.normal;
+
+            // Direct light
+            let mut l_dir = Vector3::new();
+            if let Some((inter, pdf_light)) = self.sample_light() {
+                let x = &inter.position;
+                let nn = &inter.normal;
+                let ws = (x - p).normalized();
+
+                let rray = Ray::new(p, &ws);
+
+                if let Some(nearest_inter) = self.get_nearest_intersection(&rray) {
+                    // Light not be blocked
+                    if (&nearest_inter.position - x).norm() < 0.01 {
+                        let cos_theta0 = ws.dot(&n);
+                        let cos_theta1 = (-&ws).dot(&nn);
+                        let fr = intersection.material_eval(&wo, &ws, n);
+
+                        if let Some(li) = inter.emit {
+                            l_dir = li.cwise_product(&fr) * cos_theta0 * cos_theta1
+                                / (x - p).norm().powf(2.0)
+                                / pdf_light;
+                        }
+                    }
+                }
+            }
+
+            // Indirect light
+            let mut l_indir = Vector3::new();
+            const P_RR: f32 = 0.9;
+            let ksi = rand::thread_rng().gen_range(0.0..=1.0f32);
+            if ksi < P_RR {
+                let m = intersection.material.clone().unwrap();
+                let wi = m.sample(&wo, n);
+                let ray = Ray::new(p, &wi);
+                let fr = m.eval(&wi, &wo, n);
+                let cos_theta = wi.dot(&n);
+                let pdf_hemi = m.pdf(&wi, &wo, n);
+                l_indir =
+                    self.shade(&ray, depth + 1).cwise_product(&fr) * cos_theta / (pdf_hemi * P_RR);
+            }
+            return l_dir + l_indir;
         }
+        return Vector3::new();
+    }
 
-        // Random choose one direction wi~pdf(w)
-        let wi = ONB::from(p).local(&random_direction());
-        let fr: f32 = 0.0;
-        let ray = Ray::new(p, &wi);
-        let hit_result = self.get_nearest_intersection(&ray);
-        if let Some(hit_result) = hit_result {
-            let q = &hit_result.position;
-            let cos_theta = {
-                let d = q - p;
-                let n = &hit_result.normal;
-                n.dot(&d) / n.norm() * q.norm()
-            };
-            l_indir = self.shade_pixel(q, &-wi) * fr * cos_theta * 2.0 * PI / P_RR;
+    fn sample_light(&self) -> Option<(HitResult, f32)> {
+        let emit_area = self.objects.iter().fold(0.0f32, |acc, model| {
+            acc + if model.has_emit() { model.area() } else { 0.0 }
+        });
+        let p = rand::thread_rng().gen_range(0.0f32..=1.0) * emit_area;
+        let mut emit_area = 0.0;
+        let mut sample_result = None;
+        for model in self.objects.iter() {
+            if model.has_emit() {
+                emit_area += model.area();
+                if p <= emit_area {
+                    sample_result = Some(model.sample());
+                    break;
+                }
+            }
         }
-        l_dir + l_indir
+        sample_result
     }
 
     fn get_nearest_intersection(&self, ray: &Ray) -> Option<HitResult> {
-        self._get_nearest_intersection(ray, &self.objects.root)
+        self.objects
+            .iter()
+            .flat_map(|t| t.triangles.iter())
+            .map(|triangle| {
+                ray.intersect_triangle(triangle).and_then(|barycenter| {
+                    let position =
+                        Vector3::from(&interpolate_triangle!(triangle, position; barycenter));
+                    let normal =
+                        Vector3::from(&interpolate!(triangle, normal; barycenter)).normalized();
+                    let distance = (&position - &ray.origin).norm();
+                    if distance > 0.1 {
+                        let material = triangle.material.clone();
+                        return Some(HitResult {
+                            position,
+                            normal,
+                            distance,
+                            emit: material.as_ref().and_then(|m| m.emit.clone()),
+                            material 
+                        });
+                    } else {
+                        return None;
+                    }
+                })
+            })
+            .fold(None, |acc, x| nearer_option_hitresult(acc, x))
+        // self._get_nearest_intersection(ray, &self.objects_tree.root)
     }
 
     fn _get_nearest_intersection(&self, ray: &Ray, node: &BVHNode) -> Option<HitResult> {
@@ -79,15 +261,22 @@ impl RayTracer {
                     .map(|triangle| {
                         ray.intersect_triangle(triangle).and_then(|barycenter| {
                             let position = Vector3::from(
-                                &interpolate_triangle!(triangle, world_position; barycenter),
+                                &interpolate_triangle!(triangle, position; barycenter),
                             );
-                            let normal = Vector3::from(&interpolate!(triangle, normal; barycenter)).normalized();
+                            let normal = Vector3::from(&interpolate!(triangle, normal; barycenter))
+                                .normalized();
                             let distance = (&position - &ray.origin).norm();
-                            return Some(HitResult {
-                                position,
-                                normal,
-                                distance,
-                            });
+                            if distance > 0.1 {
+                                return Some(HitResult {
+                                    position,
+                                    normal,
+                                    distance,
+                                    emit: None,
+                                    material: triangle.material.clone(),
+                                });
+                            } else {
+                                return None;
+                            }
                         })
                     })
                     .fold(None, |acc, x| nearer_option_hitresult(acc, x));
@@ -122,45 +311,7 @@ fn nearer_option_hitresult(r1: Option<HitResult>, r2: Option<HitResult>) -> Opti
     }
 }
 
-fn random_direction() -> Vector3 {
-    let mut rng = rand::thread_rng();
-    let r1 = rng.gen_range(0.0..1.0f32);
-    let r2 = rng.gen_range(0.0..1.0f32);
-    let cos_theta = (1.0 - r2).sqrt();
-    let sin_theta = r2.sqrt();
-    let phi = 2.0 * PI * r1;
-
-    let x = phi.cos() * sin_theta;
-    let y = phi.sin() * sin_theta;
-    let z = cos_theta;
-
-    vector3([x, y, z]).normalized()
-}
-
-struct ONB {
-    pub u: Vector3,
-    pub v: Vector3,
-    pub w: Vector3,
-}
-impl From<&Vector3> for ONB {
-    fn from(n: &Vector3) -> Self {
-        let w = n.clone().normalized();
-        let a = if w.x().abs() > 0.9 {
-            vector3([0.0, 1.0, 0.0])
-        } else {
-            vector3([1.0, 0.0, 0.0])
-        };
-        let v = w.cross(&a).normalized();
-        let u = w.cross(&v);
-        Self { u, v, w }
-    }
-}
-impl ONB {
-    pub fn local(&self, a: &Vector3) -> Vector3 {
-        &self.u * a.x() + &self.v * a.y() + &self.w * a.z()
-    }
-}
-
+/*
 fn F(wi: &Vector3, h: &Vector3, ni1: f32, ni2: f32) -> f32 {
     fn r0(ni1: f32, ni2: f32) -> f32 {
         ((ni1 - ni2) / (ni1 + ni2)).powi(2)
@@ -206,3 +357,4 @@ fn G(
     g_schlick_ggx(h, wi, roughness, illuminate_type)
         * g_schlick_ggx(h, wo, roughness, illuminate_type)
 }
+*/

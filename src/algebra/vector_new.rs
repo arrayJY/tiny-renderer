@@ -25,7 +25,7 @@ impl<const N: usize> Vector<N> {
     }
 
     pub fn norm(&self) -> f32 {
-        self.data_iter().map(|v| v * v).sum::<f32>().sqrt()
+        self.data_iter().map(|v| v.powi(2)).sum::<f32>().sqrt()
     }
 
     pub fn normalize(&mut self) {

@@ -5,6 +5,7 @@ use typenum::{Prod, Unsigned};
 
 mod algebra;
 mod algebra_new;
+mod pbr;
 
 #[allow(dead_code)]
 pub fn about_equal<Row, Col>(m1: &Matrixf<Row, Col>, m2: &Matrixf<Row, Col>) -> Result<(), String>

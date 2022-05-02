@@ -69,3 +69,14 @@ impl<const N: usize> Neg for Vector<N> {
         m
     }
 }
+
+impl<const N: usize> Neg for &Vector<N> {
+    type Output = Vector<N>;
+    fn neg(self) -> Self::Output {
+        let mut m = Self::Output::new();
+        m.data_iter_mut()
+            .zip(self.data_iter())
+            .for_each(|(l, r)| *l = -*r);
+        m
+    }
+}

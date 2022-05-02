@@ -1,6 +1,10 @@
 use rand::{prelude::SliceRandom, Rng};
 
-use crate::{algebra::vector_new::Vector3, interpolate_triangle, pipeline::model::Triangle, interpolate};
+use crate::{
+    algebra::vector_new::Vector3,
+    interpolate, interpolate_triangle,
+    pipeline::{model::Triangle},
+};
 
 pub struct AreaLight {
     pub triangles: Vec<Triangle>,
@@ -13,7 +17,7 @@ impl AreaLight {
         let a = rng.gen_range(0.0f32..1.0);
         let b = rng.gen_range(0.0f32..(1.0 - a));
         let c = 1.0 - a - b;
-        let barycenter = (a,b,c);
+        let barycenter = (a, b, c);
         let position = Vector3::from(&interpolate_triangle!(triangle, world_position; barycenter));
         let normal = Vector3::from(&interpolate!(triangle, normal; barycenter).normalized());
         (position, normal)

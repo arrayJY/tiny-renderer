@@ -1,3 +1,5 @@
+pub mod pbr_window;
+
 use minifb::{Key, Window, WindowOptions};
 
 pub struct FramebufferWindow {
@@ -9,9 +11,9 @@ use std::f32::consts::PI;
 
 impl FramebufferWindow {
     pub fn new(width: usize, height: usize) -> FramebufferWindow {
-        let mut window =
+        let window =
             Window::new("TinyRenderer", width, height, WindowOptions::default()).unwrap();
-        window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+        // window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
         FramebufferWindow {
             private_window: window,
         }

@@ -1,5 +1,6 @@
 use crate::{algebra::vector_new::Vector3, pipeline::model::Triangle};
 
+#[derive(Debug,Clone)]
 pub struct Ray {
     pub origin: Vector3,
     pub dir: Vector3,
@@ -15,9 +16,9 @@ impl Ray {
 
     pub fn intersect_triangle(&self, triangle: &Triangle) -> Option<(f32, f32, f32)> {
         // Moller-Trumbore
-        let p0 = Vector3::from(&triangle.vertexs[0].world_position);
-        let p1 = Vector3::from(&triangle.vertexs[1].world_position);
-        let p2 = Vector3::from(&triangle.vertexs[2].world_position);
+        let p0 = Vector3::from(&triangle.vertexs[0].position);
+        let p1 = Vector3::from(&triangle.vertexs[1].position);
+        let p2 = Vector3::from(&triangle.vertexs[2].position);
 
         let s = &self.origin - &p0;
         let e1 = &p1 - &p0;

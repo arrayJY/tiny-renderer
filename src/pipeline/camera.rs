@@ -59,9 +59,14 @@ impl Camera {
 impl Default for Camera {
     fn default() -> Self {
         Camera {
+            /*
             gaze_direct: vector3([-1.0, -1.0, -1.0]).normalized(),
             up_direct: vector3([-1.0, 1.0, -1.0]).normalized(),
             eye_position: vector3([3.0, 3.0, 3.0]),
+            */
+            gaze_direct: vector3([0.0, 0.0, -1.0]).normalized(),
+            up_direct: vector3([0.0, 1.0, 0.0]).normalized(),
+            eye_position: vector3([0.0, 0.0, 2.0]),
             eye_fov: PI / 2.0,
             aspect_ratio: 1.0,
             near: 0.1,

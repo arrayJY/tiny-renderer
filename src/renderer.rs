@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     algebra::{
         matrix_new::Matrix4,
@@ -7,7 +9,7 @@ use crate::{
         camera::Camera,
         fragment_shader::{make_shader, FragmentShader},
         light::Light,
-        model::Model,
+        model::{Material, Model},
         model::{Triangle, TriangulatedModel, Vertex},
         rasterizer::Rasterizer,
         transformation::Transformation,
@@ -160,6 +162,43 @@ fn rotate_around_axis(v: &Vector3, axis: &Vector3, angle: f32) -> Vector3 {
     v * angle.cos() + axis.cross(v) * angle.sin() + axis * axis.dot(v) * (1.0 - angle.cos())
 }
 
+pub fn triangulated_models_and_triangles(
+    models: &[Model],
+    scale: f32,
+) -> (Vec<TriangulatedModel>, Vec<Triangle>) {
+    let triangles_len = models.iter().map(|m| m.vertexs.len() / 3).sum();
+    let mut result_triangles = Vec::<Triangle>::with_capacity(triangles_len);
+
+    let models = models
+        .iter()
+        .map(|model| model.clone())
+        .map(|mut model| {
+            model.vertexs.iter_mut().for_each(|v| {
+                let scale = Matrix4::scale_matrix(scale, scale, scale);
+                v.position = &scale * &v.position;
+            });
+            model
+        })
+        .map(|model| {
+            let triangles = model
+                .indices
+                .iter()
+                .map(|indices| Triangle {
+                    vertexs: indices.map(|i| model.vertexs[i as usize].clone()).to_vec(),
+                    material: model.material.clone(),
+                })
+                .collect::<Vec<_>>();
+            // let triangles = primitive_assembly(model.vertexs, &model.material);
+            result_triangles.append(&mut triangles.clone());
+            TriangulatedModel {
+                triangles,
+                material: model.material,
+            }
+        })
+        .collect::<Vec<_>>();
+    (models, result_triangles)
+}
+
 fn triangulated_models(
     models: &[Model],
     camera: &Camera,
@@ -177,7 +216,7 @@ fn triangulated_models(
             model
         })
         .map(|model| TriangulatedModel {
-            triangles: primitive_assembly(model.vertexs),
+            triangles: primitive_assembly(model.vertexs, &model.material),
             material: model.material,
         })
         .collect::<Vec<_>>()
@@ -331,11 +370,12 @@ fn complete_homogeneous_clip(model: &Model) -> Vec<Vertex> {
     new_vertexs
 }
 
-fn primitive_assembly(vertexs: Vec<Vertex>) -> Vec<Triangle> {
+fn primitive_assembly(vertexs: Vec<Vertex>, material: &Option<Rc<Material>>) -> Vec<Triangle> {
     vertexs
         .chunks(3)
         .map(|vertexs| Triangle {
             vertexs: vertexs.to_vec(),
+            material: material.clone(),
         })
         .collect()
 }
@@ -395,6 +435,7 @@ fn bitmap_from_framebuffer(
         .map(|(i, ..)| &frame_buffer[i..i + width])
         .for_each(|line| {
             line.iter().for_each(|c| {
+                // frame_buffer_bitmap.push(color);
                 if let Some(c) = c {
                     let pixel: u32 = ((c.a as u32) << 24)
                         | ((c.r as u32) << 16)
@@ -404,6 +445,7 @@ fn bitmap_from_framebuffer(
                 } else {
                     frame_buffer_bitmap.push(background)
                 }
+                // */
             })
         });
 
