@@ -7,7 +7,7 @@ use std::f32::consts::PI;
 use std::sync::Arc;
 use tobj;
 
-use super::ray_tracing::pbr_shading::HitResult;
+use crate::ray_tracing::path_tracing::HitResult;
 
 #[derive(Debug, Clone)]
 pub struct Vertex {

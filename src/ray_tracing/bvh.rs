@@ -1,6 +1,6 @@
 use crate::algebra::vector_new::Vector4;
 use crate::pipeline::model::Triangle;
-use crate::pipeline::ray_tracing::ray::Ray;
+use crate::ray_tracing::ray::Ray;
 
 #[derive(Debug, Default, Clone)]
 pub struct AABB {

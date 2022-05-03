@@ -1,7 +1,6 @@
 use std::env;
 use tiny_renderer::{
-    pipeline::{model::Model, ray_tracing::pbr_shading::RayTracer},
-    renderer::Renderer,
+    pipeline::model::Model, ray_tracing::path_tracing::RayTracer, renderer::Renderer,
 };
 
 fn main() {

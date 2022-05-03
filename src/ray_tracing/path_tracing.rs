@@ -1,10 +1,8 @@
 use crate::{
     algebra::vector_new::{vector3, Vector3},
     interpolate, interpolate_triangle,
-    pipeline::{
-        model::{Material, Model, Triangle, TriangulatedModel},
-        ray_tracing::ray::Ray,
-    },
+    pipeline::model::{Material, Model, Triangle, TriangulatedModel},
+    ray_tracing::ray::Ray,
     renderer::triangulated_models_and_triangles,
     window::pbr_window::PBRWindow,
     Color,
@@ -12,7 +10,7 @@ use crate::{
 use rand::Rng;
 use std::{f32::consts::PI, sync::Arc};
 
-use super::data_structure::bvh::{BVHNode, BVHTree, AABB};
+use super::bvh::{BVHNode, BVHTree, AABB};
 
 pub struct RayTracer {
     pub objects_tree: BVHTree,
@@ -22,7 +20,6 @@ pub struct RayTracer {
     pub shaded_count: usize,
     pub width: usize,
     pub height: usize,
-    // pub pixel_iter: Box<dyn Iterator<Item = (usize, usize)>>,
     pub spp: usize,
 }
 

@@ -4,6 +4,5 @@ pub mod fragment_shader;
 pub mod light;
 pub mod model;
 pub mod rasterizer;
-pub mod ray_tracing;
 pub mod texture;
 pub mod transformation;

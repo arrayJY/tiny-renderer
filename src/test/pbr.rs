@@ -1,9 +1,7 @@
 use crate::{
     algebra::vector_new::vector3,
-    pipeline::{
-        model::Model,
-        ray_tracing::data_structure::bvh::{BVHNode, BVHTree},
-    },
+    pipeline::model::Model,
+    ray_tracing::bvh::{BVHNode, BVHTree},
     renderer::triangulated_models_and_triangles,
     Color,
 };

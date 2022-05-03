@@ -199,7 +199,7 @@ pub fn triangulated_models_and_triangles(
             TriangulatedModel {
                 triangles,
                 material: model.material,
-                area 
+                area,
             }
         })
         .collect::<Vec<_>>();

@@ -1,6 +1,5 @@
+use crate::ray_tracing::path_tracing::RayTracer;
 use minifb::{Key, Window, WindowOptions};
-
-use crate::pipeline::ray_tracing::pbr_shading::RayTracer;
 
 pub struct PBRWindow {
     window: Window,
