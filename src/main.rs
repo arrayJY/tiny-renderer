@@ -11,11 +11,11 @@ fn main() {
     let model_path = format!("{}.obj", path);
 
     if shader_name == "pbr" {
-        const DEFAULT_SSP: usize = 8;
-        let bounce = args
+        const DEFAULT_SPP: usize = 8;
+        let spp = args
             .get(3)
-            .map_or(DEFAULT_SSP, |s| s.parse::<usize>().unwrap_or(DEFAULT_SSP));
-        RayTracer::render(&model_path, bounce);
+            .map_or(DEFAULT_SPP, |s| s.parse::<usize>().unwrap_or(DEFAULT_SPP));
+        RayTracer::render(&model_path, spp);
     } else {
         // let shader = make_shader(shader_name, path);
         Renderer::default()

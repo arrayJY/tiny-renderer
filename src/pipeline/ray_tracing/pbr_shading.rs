@@ -23,7 +23,7 @@ pub struct RayTracer {
     pub width: usize,
     pub height: usize,
     // pub pixel_iter: Box<dyn Iterator<Item = (usize, usize)>>,
-    pub ssp: usize,
+    pub spp: usize,
 }
 
 impl RayTracer {
@@ -32,7 +32,7 @@ impl RayTracer {
         height: usize,
         triangles: Vec<Triangle>,
         objects: Vec<TriangulatedModel>,
-        ssp: usize,
+        spp: usize,
     ) -> Self {
         let objects_tree = BVHTree::from_triangles(&triangles.as_slice());
         let bounding_boxes = objects
@@ -47,7 +47,7 @@ impl RayTracer {
             shaded_count: 0,
             width,
             height,
-            ssp,
+            spp,
         };
         ray_tracer
     }
@@ -77,15 +77,15 @@ impl RayTracer {
             .collect()
     }
 
-    pub fn render(path: &str, ssp: usize) {
+    pub fn render(path: &str, spp: usize) {
         use indicatif::{ProgressBar, ProgressStyle};
         const WIDTH: usize = 800;
         const HEIGHT: usize = 800;
         let models = Model::from_obj(path);
         let (objects, triangles) = triangulated_models_and_triangles(&models, (WIDTH / 2) as f32);
-        let mut ray_tracer = RayTracer::new(WIDTH, HEIGHT, triangles, objects, ssp);
+        let mut ray_tracer = RayTracer::new(WIDTH, HEIGHT, triangles, objects, spp);
 
-        println!("Rendering {}, {}x{}, {} ssp...\n", path, WIDTH, HEIGHT, ssp);
+        println!("Rendering {}, {}x{}, {} spp...\n", path, WIDTH, HEIGHT, spp);
         const CPU_NUM: usize = 16;
         const LINE: usize = HEIGHT / CPU_NUM;
         let mut framebuffer = vec![Vector3::new(); WIDTH * HEIGHT];
@@ -101,18 +101,18 @@ impl RayTracer {
                 .chunks_mut(WIDTH * HEIGHT / CPU_NUM)
                 .enumerate()
                 .for_each(|(i, s)| {
-                    let pb = multi_bar.add(ProgressBar::new((s.len() * ssp) as u64));
+                    let pb = multi_bar.add(ProgressBar::new((s.len() * spp) as u64));
                     pb.set_style(progress_style.clone());
                     scope.spawn(move || {
                         pb.set_message(format!("thread #{}", i + 1));
-                        for _ in 0..ssp {
+                        for _ in 0..spp {
                             let start = i * LINE;
                             let pixel_iter = (start..start + LINE)
                                 .flat_map(move |a| (0..WIDTH).map(move |b| (a, b)));
                             let mut count = 0;
                             s.iter_mut().zip(pixel_iter).for_each(|(p, (y, x))| {
                                 let ray = ray_tracer.pixel_to_ray(x, y);
-                                *p += ray_tracer.shade(&ray, 0) / ssp as f32;
+                                *p += ray_tracer.shade(&ray, 0) / spp as f32;
                                 count += 1;
                                 if count % WIDTH == 0 {
                                     pb.inc(WIDTH as u64);

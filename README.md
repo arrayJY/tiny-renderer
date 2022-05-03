@@ -16,7 +16,7 @@ Tiny renderer is available in **Windows, Linux and MacOSX** now.
 You can run with `cargo`.
 ```
 cargo run --release [shader] [path]
-cargo run --release pbr [path] [ssp]
+cargo run --release pbr [path] [spp]
 ```
 `shader` is the name of fragment shader.
 
