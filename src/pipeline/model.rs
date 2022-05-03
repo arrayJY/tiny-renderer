@@ -103,6 +103,7 @@ pub struct Model {
 pub struct TriangulatedModel {
     pub triangles: Vec<Triangle>,
     pub material: Option<Arc<Material>>,
+    pub area: f32,
 }
 
 impl TriangulatedModel {
@@ -137,7 +138,7 @@ impl TriangulatedModel {
     }
 
     pub fn area(&self) -> f32 {
-        self.triangles.iter().map(|triangle| triangle.area()).sum()
+        self.triangles.iter().map(|triangle| triangle.area).sum()
     }
 }
 
@@ -145,6 +146,7 @@ impl TriangulatedModel {
 pub struct Triangle {
     pub vertexs: Vec<Vertex>,
     pub material: Option<Arc<Material>>,
+    pub area: f32,
 }
 
 impl Triangle {
@@ -162,13 +164,13 @@ impl Triangle {
         r
     }
 
-    pub fn area(&self) -> f32 {
+    pub fn calc_area(&mut self) {
         let a = &self.vertexs[0].position;
         let b = &self.vertexs[1].position;
         let c = &self.vertexs[2].position;
         let ab = Vector3::from(&(b - a));
         let ac = Vector3::from(&(c - a));
-        ab.cross(&ac).norm() / 2.0
+        self.area = ab.cross(&ac).norm() / 2.0;
     }
 
     pub fn sample_position(&self) -> (Vector3, Vector3) {
@@ -310,6 +312,7 @@ impl Model {
                     .map(|vertex| vertex.clone())
                     .collect(),
                 material: self.material.clone(),
+                area: 0.0,
             })
             .collect()
     }

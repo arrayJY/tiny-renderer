@@ -35,12 +35,6 @@ impl RayTracer {
         ssp: usize,
     ) -> Self {
         let objects_tree = BVHTree::from_triangles(&triangles.as_slice());
-        /* let pixel_iter = Box::new(
-            (0..width)
-                .flat_map(move |a| (0..height).map(move |b| (a, b)))
-                .cycle(),
-        );
-        */
         let bounding_boxes = objects
             .iter()
             .map(|model| AABB::from(&model.triangles[..]))
@@ -53,7 +47,6 @@ impl RayTracer {
             shaded_count: 0,
             width,
             height,
-            // pixel_iter,
             ssp,
         };
         ray_tracer
@@ -93,7 +86,7 @@ impl RayTracer {
         let mut ray_tracer = RayTracer::new(WIDTH, HEIGHT, triangles, objects, ssp);
 
         println!("Rendering {}, {}x{}, {} ssp...\n", path, WIDTH, HEIGHT, ssp);
-        const CPU_NUM: usize = 8;
+        const CPU_NUM: usize = 16;
         const LINE: usize = HEIGHT / CPU_NUM;
         let mut framebuffer = vec![Vector3::new(); WIDTH * HEIGHT];
         let multi_bar = indicatif::MultiProgress::new();
@@ -116,10 +109,14 @@ impl RayTracer {
                             let start = i * LINE;
                             let pixel_iter = (start..start + LINE)
                                 .flat_map(move |a| (0..WIDTH).map(move |b| (a, b)));
+                            let mut count = 0;
                             s.iter_mut().zip(pixel_iter).for_each(|(p, (y, x))| {
                                 let ray = ray_tracer.pixel_to_ray(x, y);
                                 *p += ray_tracer.shade(&ray, 0) / ssp as f32;
-                                pb.inc(1);
+                                count += 1;
+                                if count % WIDTH == 0 {
+                                    pb.inc(WIDTH as u64);
+                                }
                             })
                         }
                         pb.finish_with_message("done");
@@ -237,7 +234,7 @@ impl RayTracer {
                     let normal =
                         Vector3::from(&interpolate!(triangle, normal; barycenter)).normalized();
                     let distance = (&position - &ray.origin).norm();
-                    if distance > 0.1 {
+                    if distance > 0.01 {
                         let material = triangle.material.clone();
                         return Some(HitResult {
                             position,

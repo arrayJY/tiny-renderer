@@ -186,13 +186,20 @@ pub fn triangulated_models_and_triangles(
                 .map(|indices| Triangle {
                     vertexs: indices.map(|i| model.vertexs[i as usize].clone()).to_vec(),
                     material: model.material.clone(),
+                    area: 0.0,
+                })
+                .map(|mut t| {
+                    t.calc_area();
+                    t
                 })
                 .collect::<Vec<_>>();
+            let area = triangles.iter().map(|t| t.area).sum::<f32>();
             // let triangles = primitive_assembly(model.vertexs, &model.material);
             result_triangles.append(&mut triangles.clone());
             TriangulatedModel {
                 triangles,
                 material: model.material,
+                area 
             }
         })
         .collect::<Vec<_>>();
@@ -218,6 +225,7 @@ fn triangulated_models(
         .map(|model| TriangulatedModel {
             triangles: primitive_assembly(model.vertexs, &model.material),
             material: model.material,
+            area: 0.0,
         })
         .collect::<Vec<_>>()
 }
@@ -376,6 +384,7 @@ fn primitive_assembly(vertexs: Vec<Vertex>, material: &Option<Arc<Material>>) ->
         .map(|vertexs| Triangle {
             vertexs: vertexs.to_vec(),
             material: material.clone(),
+            area: 0.0,
         })
         .collect()
 }
