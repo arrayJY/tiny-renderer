@@ -21,6 +21,7 @@ pub struct RayTracer {
     pub width: usize,
     pub height: usize,
     pub spp: usize,
+    pub background_color: Vector3
 }
 
 impl RayTracer {
@@ -45,12 +46,13 @@ impl RayTracer {
             width,
             height,
             spp,
+            background_color: vector3([0.27, 0.27, 0.27])
         };
         ray_tracer
     }
 
     pub fn pixel_to_ray(&self, x: usize, y: usize) -> Ray {
-        const FOV: f32 = PI / 2.0;
+        const FOV: f32 = PI / 4.0;
         let scale: f32 = (FOV / 2.0).tan();
 
         let (width, height) = (self.width as f32, self.height as f32);
@@ -61,7 +63,7 @@ impl RayTracer {
         let y = (1.0 - 2.0 * (y) / height) * scale;
 
         let dir = vector3([x, y, -1.0]).normalized();
-        let origin_z = self.width as f32;
+        let origin_z = self.width as f32 * 1.7;
         let origin = vector3([0.0, 0.0, origin_z]);
 
         Ray { origin, dir }
@@ -174,9 +176,10 @@ impl RayTracer {
                         let fr = intersection.material_eval(&wo, &ws, n);
 
                         if let Some(li) = inter.emit {
-                            l_dir = li.cwise_product(&fr) * cos_theta0 * cos_theta1
-                                / (x - p).norm().powf(2.0)
-                                / pdf_light;
+                            if cos_theta0 * cos_theta0 > 0.0 {
+                                l_dir = li.cwise_product(&fr) * cos_theta0 * cos_theta1
+                                    / ((x - p).norm().powi(2) * pdf_light);
+                            }
                         }
                     }
                 }
@@ -196,9 +199,9 @@ impl RayTracer {
                 l_indir =
                     self.shade(&ray, depth + 1).cwise_product(&fr) * cos_theta / (pdf_hemi * P_RR);
             }
-            return l_dir + l_indir;
+            return l_dir + l_indir ;
         }
-        return Vector3::new();
+        return self.background_color.clone();
     }
 
     fn sample_light(&self) -> Option<(HitResult, f32)> {
