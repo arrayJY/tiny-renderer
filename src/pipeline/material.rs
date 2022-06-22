@@ -116,7 +116,7 @@ impl PBRMaterial {
         r
     }
     fn normal_distribution(&self, n: &Vector3, h: &Vector3) -> f32 {
-        self.ggx(n, h)
+        self.ggx(n, h).min(1.0)
     }
 
     fn geometry(&self, wi: &Vector3, wo: &Vector3, h: &Vector3, illum_type: IlluminateType) -> f32 {
@@ -144,8 +144,8 @@ impl PBRMaterial {
     fn g_schlick_ggx(&self, n: &Vector3, v: &Vector3, illum_type: IlluminateType) -> f32 {
         let roughness = self.roughness;
         let k = match illum_type {
-            IlluminateType::Direct => (roughness.powi(2) + 1.0).powi(2) / 8.0,
-            IlluminateType::IBL => roughness.powi(4) / 2.0,
+            IlluminateType::Direct => (roughness + 1.0).powi(2) / 8.0,
+            IlluminateType::IBL => roughness.powi(2) / 2.0,
         };
         let n_dot_v = n.dot(v).abs();
         n_dot_v / (n_dot_v * (1.0 - k) + k)
@@ -179,13 +179,10 @@ impl PBRMaterial {
     }
 
     pub fn pdf(&self, wi: &Vector3, wo: &Vector3, n: &Vector3) -> f32 {
-        if n.dot(wi) * n.dot(wo) < 0.0 {
+        if n.dot(wi) * n.dot(wo) <= 0.0 {
             return 0.0;
         }
 
-        // const DIFFUSE: f32 = 0.5 / PI;
-        // let kd = Vector3::from(1.0) - self.fresnel_reflection(wi, h);
-        // let kd = kd * DIFFUSE;
         let h = &(wi + wo).normalized();
         let cos_theta = h.dot(n).abs();
         let h_dot_wo = h.dot(wo);
@@ -196,8 +193,6 @@ impl PBRMaterial {
             1.0 / (4.0 * h_dot_wo.abs())
         };
         ph * po
-        // return Vector3::from(DIFFUSE);
-        // Vector3::from(ks) + kd
     }
 
     pub fn sample(&self, wi: &Vector3, n: &Vector3) -> Vector3 {
