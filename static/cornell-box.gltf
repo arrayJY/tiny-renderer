@@ -186,9 +186,9 @@
             "name" : "leftWall.001",
             "pbrMetallicRoughness" : {
                 "baseColorFactor" : [
-                    0.6299999952316284,
-                    0.12499999761581421,
-                    0.10000000074505806,
+                    0.63,
+                    0.065,
+                    0.05,
                     1
                 ],
                 "metallicFactor" : 0
@@ -200,7 +200,7 @@
                 1.0, 0.80624145, 0.64975286
             ],
             "extras" : {
-                "intensity" : 80.0
+                "intensity" : 60.0
             },
             "name" : "light.001",
             "pbrMetallicRoughness" : {
@@ -218,9 +218,9 @@
             "name" : "rightWall.001",
             "pbrMetallicRoughness" : {
                 "baseColorFactor" : [
-                    0.14000000059604645,
-                    0.44999998807907104,
-                    0.09099999815225601,
+                    0.14,
+                    0.45,
+                    0.091,
                     1
                 ],
                 "metallicFactor" : 0

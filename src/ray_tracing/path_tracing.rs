@@ -27,6 +27,9 @@ pub struct RayTracer {
     pub background_color: Vector3,
 }
 
+const ELISION: f32 = 0.001;
+
+
 impl RayTracer {
     pub fn new(
         width: usize,
@@ -190,14 +193,15 @@ impl RayTracer {
 
                 if let Some(nearest_inter) = self.get_nearest_intersection(&rray) {
                     // Light not be blocked
-                    if (&nearest_inter.position - x).norm() < 0.0001 {
+                    if (&nearest_inter.position - x).norm() < ELISION{
                         let cos_theta0 = ws.dot(&n).abs();
                         let cos_theta1 = (-ws).dot(&nn).abs();
                         let fr = intersection.material_eval(&ws, &wo, n, IlluminateType::Direct);
                         if let Some(li) = inter.emit {
                             if cos_theta0 * cos_theta0 > 0.0 {
-                                let per = fr * cos_theta0 * cos_theta1 /  ((x - p).norm().powi(2) * pdf_light);
-                                let per = per.clamp_max(1.0);
+                                let per = fr * cos_theta0 * cos_theta1
+                                    / ((x - p).norm().powi(2) * pdf_light);
+                                // let per = per.clamp_max(1.0);
                                 l_dir = li.cwise_product(&per)
                                 // println!("{:?}", l_dir);
                             }
@@ -217,9 +221,12 @@ impl RayTracer {
                 let fr = m.eval(&wi, &wo, n, IlluminateType::IBL);
                 let cos_theta = wi.dot(&n).abs();
                 let pdf_bsdf = m.pdf(&wi, &wo, n);
+                let pdf_bsdf_denom = if pdf_bsdf == 0.0 { 0.0 } else { 1.0 / pdf_bsdf };
+                let pdf_bsdf_denom = pdf_bsdf_denom / P_RR;
                 if pdf_bsdf > 0.0 {
-                    let fr = fr * cos_theta / (pdf_bsdf * P_RR);
-                    l_indir = self.shade(&ray, depth + 1).cwise_product(&fr);
+                    let fr = fr * cos_theta * pdf_bsdf_denom;
+                    // let fr = fr.clamp_max(1.0);
+                    l_indir = self.shade(&ray, depth + 1).clamp_max(1.0).cwise_product(&fr);
                 }
             }
             let r = l_dir + l_indir;
@@ -258,8 +265,8 @@ impl RayTracer {
                     let normal =
                         Vector3::from(&interpolate!(triangle, normal; barycenter)).normalized();
                     let distance = (&position - &ray.origin).norm();
-                    if distance > 0.001 {
-                        let material = triangle.material.clone();
+                    let material = triangle.material.clone();
+                    if distance > ELISION {
                         return Some(HitResult {
                             position,
                             normal,
@@ -270,9 +277,8 @@ impl RayTracer {
                             }),
                             material,
                         });
-                    } else {
-                        return None;
                     }
+                    None
                 })
             })
             .fold(None, |acc, x| nearer_option_hitresult(acc, x))
@@ -297,13 +303,17 @@ impl RayTracer {
                             let normal = Vector3::from(&interpolate!(triangle, normal; barycenter))
                                 .normalized();
                             let distance = (&position - &ray.origin).norm();
-                            return Some(HitResult {
-                                position,
-                                normal,
-                                distance,
-                                emit: None,
-                                material: triangle.material.clone(),
-                            });
+                            if distance > 0.001 {
+                                return Some(HitResult {
+                                    position,
+                                    normal,
+                                    distance,
+                                    emit: None,
+                                    material: triangle.material.clone(),
+                                });
+                            } else {
+                                None
+                            }
                         })
                     })
                     .fold(None, |acc, x| nearer_option_hitresult(acc, x));
@@ -328,9 +338,6 @@ impl RayTracer {
 fn nearer_option_hitresult(r1: Option<HitResult>, r2: Option<HitResult>) -> Option<HitResult> {
     match (&r1, &r2) {
         (Some(h1), Some(h2)) => {
-            if h1.distance < 0.0001 {
-                return r2;
-            }
             if h1.distance < h2.distance {
                 r1
             } else {

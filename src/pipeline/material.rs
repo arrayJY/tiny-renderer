@@ -116,20 +116,11 @@ impl PBRMaterial {
         r
     }
     fn normal_distribution(&self, n: &Vector3, h: &Vector3) -> f32 {
-        self.ggx(n, h).min(1.0)
+        self.ggx(n, h).clamp(0.0, 1.0)
     }
 
     fn geometry(&self, wi: &Vector3, wo: &Vector3, h: &Vector3, illum_type: IlluminateType) -> f32 {
         self.g_schlick_ggx(h, wi, illum_type) * self.g_schlick_ggx(h, wo, illum_type)
-        /*
-        let h_dot_wi = h.dot(wi);
-        let h_dot_wo = h.dot(wo);
-        let a = (2.0 *  h_dot_wi * h_dot_wo).abs();
-        let b = (h.dot(wi) * h.dot(wo)).abs();
-        let t = self.roughness;
-        let denom = a * (1.0 - t) + b * t;
-        2.0 / denom
-        */
     }
 
     fn ggx(&self, n: &Vector3, h: &Vector3) -> f32 {
@@ -278,48 +269,3 @@ impl<'a> From<&GLTFMaterial<'a>> for OptionEmissiveMaterial {
         }))
     }
 }
-
-/*
-impl From<&ObjMaterial> for Material {
-    fn from(material: &ObjMaterial) -> Self {
-        let emit = emit_from_material(material);
-        let material_type =
-            material
-                .illumination_model
-                .map_or(MaterialType::Diffuse, |illum_model| match illum_model {
-                    2 => MaterialType::Microfacet,
-                    _ => MaterialType::Diffuse,
-                });
-
-        let &ObjMaterial {
-            ambient,
-            diffuse,
-            specular,
-            optical_density,
-            shininess,
-            dissolve,
-            ..
-        } = material;
-
-        const AIR_OPTICAL_DENSITY: f32 = 1.0;
-        let roughness = cal_roughness(shininess);
-
-        Self {
-            ambient_color: vector3(ambient.clone()),
-            diffuse_color: vector3(diffuse.clone()),
-            specular_color: vector3(specular.clone()),
-            shininess,
-            optical_density,
-            dissolve,
-            emit,
-            material_type,
-            f0: if roughness < 0.2 {
-                Vector3::from(&diffuse)
-            } else {
-                vector3([0.04, 0.04, 0.04])
-            },
-            roughness,
-        }
-    }
-}
-*/
