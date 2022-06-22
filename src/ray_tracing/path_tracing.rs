@@ -190,14 +190,14 @@ impl RayTracer {
 
                 if let Some(nearest_inter) = self.get_nearest_intersection(&rray) {
                     // Light not be blocked
-                    if (&nearest_inter.position - x).norm() < 0.01 {
-                        let cos_theta0 = ws.dot(&n);
-                        let cos_theta1 = (-ws).dot(&nn);
-                        let fr = intersection.material_eval(ws, &wo, n, IlluminateType::Direct);
+                    if (&nearest_inter.position - x).norm() < 0.0001 {
+                        let cos_theta0 = ws.dot(&n).abs();
+                        let cos_theta1 = (-ws).dot(&nn).abs();
+                        let fr = intersection.material_eval(&ws, &wo, n, IlluminateType::Direct);
                         if let Some(li) = inter.emit {
                             if cos_theta0 * cos_theta0 > 0.0 {
                                 let per = fr * cos_theta0 * cos_theta1 /  ((x - p).norm().powi(2) * pdf_light);
-                                // let per = per.clamp_max(&vector3([1.2, 1.2, 1.2]));
+                                let per = per.clamp_max(1.0);
                                 l_dir = li.cwise_product(&per)
                                 // println!("{:?}", l_dir);
                             }
@@ -328,10 +328,9 @@ impl RayTracer {
 fn nearer_option_hitresult(r1: Option<HitResult>, r2: Option<HitResult>) -> Option<HitResult> {
     match (&r1, &r2) {
         (Some(h1), Some(h2)) => {
-            if h1.distance < 0.00001 {
+            if h1.distance < 0.0001 {
                 return r2;
             }
-
             if h1.distance < h2.distance {
                 r1
             } else {
