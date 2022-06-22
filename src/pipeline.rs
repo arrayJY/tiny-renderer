@@ -6,3 +6,4 @@ pub mod model;
 pub mod rasterizer;
 pub mod texture;
 pub mod transformation;
+pub mod material;

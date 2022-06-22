@@ -113,6 +113,10 @@ pub struct BVHTree {
 }
 
 impl BVHTree {
+    pub fn new() -> Self {
+        BVHTree { root: BVHNode::default() }
+    }
+
     pub fn from_triangles(triangles: &[Triangle]) -> Self {
         let funcs: [fn(&Vector4) -> f32; 3] = [
             |v: &Vector4| v.x(),

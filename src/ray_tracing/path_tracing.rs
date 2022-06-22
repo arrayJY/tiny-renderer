@@ -1,7 +1,10 @@
 use crate::{
     algebra::vector_new::{vector3, Vector3},
     interpolate, interpolate_triangle,
-    pipeline::model::{Material, Model, Triangle, TriangulatedModel},
+    pipeline::{
+        material::{IlluminateType, MaterialNew, PBRMaterial},
+        model::{Model, Triangle, TriangulatedModel},
+    },
     ray_tracing::ray::Ray,
     renderer::triangulated_models_and_triangles,
     window::pbr_window::PBRWindow,
@@ -21,7 +24,7 @@ pub struct RayTracer {
     pub width: usize,
     pub height: usize,
     pub spp: usize,
-    pub background_color: Vector3
+    pub background_color: Vector3,
 }
 
 impl RayTracer {
@@ -32,7 +35,8 @@ impl RayTracer {
         objects: Vec<TriangulatedModel>,
         spp: usize,
     ) -> Self {
-        let objects_tree = BVHTree::from_triangles(&triangles.as_slice());
+        let objects_tree = BVHTree::new();
+        // let objects_tree = BVHTree::from_triangles(&triangles.as_slice());
         let bounding_boxes = objects
             .iter()
             .map(|model| AABB::from(&model.triangles[..]))
@@ -46,7 +50,7 @@ impl RayTracer {
             width,
             height,
             spp,
-            background_color: vector3([0.27, 0.27, 0.27])
+            background_color: vector3([0.27, 0.27, 0.27]),
         };
         ray_tracer
     }
@@ -64,7 +68,7 @@ impl RayTracer {
 
         let dir = vector3([x, y, -1.0]).normalized();
         let origin_z = self.width as f32 * 1.7;
-        let origin = vector3([0.0, 0.0, origin_z]);
+        let origin = vector3([0.0, self.width as f32 / 2.0, origin_z]);
 
         Ray { origin, dir }
     }
@@ -80,7 +84,7 @@ impl RayTracer {
         use indicatif::{ProgressBar, ProgressStyle};
         const WIDTH: usize = 800;
         const HEIGHT: usize = 800;
-        let models = Model::from_obj(path);
+        let models = Model::from_gltf(path);
         let (objects, triangles) = triangulated_models_and_triangles(&models, (WIDTH / 2) as f32);
         let mut ray_tracer = RayTracer::new(WIDTH, HEIGHT, triangles, objects, spp);
 
@@ -137,12 +141,25 @@ pub struct HitResult {
     pub normal: Vector3,
     pub distance: f32,
     pub emit: Option<Vector3>,
-    pub material: Option<Arc<Material>>,
+    pub material: Option<Arc<MaterialNew>>,
 }
 
 impl HitResult {
-    pub fn material_eval(&self, wi: &Vector3, wo: &Vector3, n: &Vector3) -> Vector3 {
-        self.material.as_ref().unwrap().eval(wi, wo, n)
+    pub fn material_eval(
+        &self,
+        wi: &Vector3,
+        wo: &Vector3,
+        n: &Vector3,
+        illum_type: IlluminateType,
+    ) -> Vector3 {
+        self.pbr_material().eval(wi, wo, n, illum_type)
+    }
+
+    pub fn pbr_material(&self) -> &PBRMaterial {
+        match self.material.as_ref().unwrap().as_ref() {
+            MaterialNew::PBR(m) => m,
+            _ => panic!("Only accept PBRMaterial"),
+        }
     }
 }
 
@@ -152,6 +169,9 @@ impl RayTracer {
 
         if let Some(intersection) = intersection {
             if intersection.emit.is_some() {
+                if depth > 0 {
+                    return vector3([0.0, 0.0, 0.0]);
+                }
                 return vector3([1.0, 1.0, 1.0]);
             }
 
@@ -164,7 +184,7 @@ impl RayTracer {
             if let Some((inter, pdf_light)) = self.sample_light() {
                 let x = &inter.position;
                 let nn = &inter.normal;
-                let ws = (x - p).normalized();
+                let ws = &(x - p).normalized();
 
                 let rray = Ray::new(p, &ws);
 
@@ -172,13 +192,14 @@ impl RayTracer {
                     // Light not be blocked
                     if (&nearest_inter.position - x).norm() < 0.01 {
                         let cos_theta0 = ws.dot(&n);
-                        let cos_theta1 = (-&ws).dot(&nn);
-                        let fr = intersection.material_eval(&wo, &ws, n);
-
+                        let cos_theta1 = (-ws).dot(&nn);
+                        let fr = intersection.material_eval(ws, &wo, n, IlluminateType::Direct);
                         if let Some(li) = inter.emit {
                             if cos_theta0 * cos_theta0 > 0.0 {
-                                l_dir = li.cwise_product(&fr) * cos_theta0 * cos_theta1
-                                    / ((x - p).norm().powi(2) * pdf_light);
+                                let per = fr * cos_theta0 * cos_theta1 /  ((x - p).norm().powi(2) * pdf_light);
+                                // let per = per.clamp_max(&vector3([1.2, 1.2, 1.2]));
+                                l_dir = li.cwise_product(&per)
+                                // println!("{:?}", l_dir);
                             }
                         }
                     }
@@ -190,16 +211,19 @@ impl RayTracer {
             const P_RR: f32 = 0.9;
             let ksi = rand::thread_rng().gen_range(0.0..=1.0f32);
             if ksi < P_RR {
-                let m = intersection.material.clone().unwrap();
+                let m = intersection.pbr_material();
                 let wi = m.sample(&wo, n);
                 let ray = Ray::new(p, &wi);
-                let fr = m.eval(&wi, &wo, n);
-                let cos_theta = wi.dot(&n);
-                let pdf_hemi = m.pdf(&wi, &wo, n);
-                l_indir =
-                    self.shade(&ray, depth + 1).cwise_product(&fr) * cos_theta / (pdf_hemi * P_RR);
+                let fr = m.eval(&wi, &wo, n, IlluminateType::IBL);
+                let cos_theta = wi.dot(&n).abs();
+                let pdf_bsdf = m.pdf(&wi, &wo, n);
+                if pdf_bsdf > 0.0 {
+                    let fr = fr * cos_theta / (pdf_bsdf * P_RR);
+                    l_indir = self.shade(&ray, depth + 1).cwise_product(&fr);
+                }
             }
-            return l_dir + l_indir ;
+            let r = l_dir + l_indir;
+            return r;
         }
         return self.background_color.clone();
     }
@@ -234,13 +258,16 @@ impl RayTracer {
                     let normal =
                         Vector3::from(&interpolate!(triangle, normal; barycenter)).normalized();
                     let distance = (&position - &ray.origin).norm();
-                    if distance > 0.01 {
+                    if distance > 0.001 {
                         let material = triangle.material.clone();
                         return Some(HitResult {
                             position,
                             normal,
                             distance,
-                            emit: material.as_ref().and_then(|m| m.emit.clone()),
+                            emit: material.as_ref().and_then(|m| {
+                                m.emissive_material()
+                                    .and_then(|e| Some(&e.base_color * e.intensity))
+                            }),
                             material,
                         });
                     } else {
@@ -270,17 +297,13 @@ impl RayTracer {
                             let normal = Vector3::from(&interpolate!(triangle, normal; barycenter))
                                 .normalized();
                             let distance = (&position - &ray.origin).norm();
-                            if distance > 0.1 {
-                                return Some(HitResult {
-                                    position,
-                                    normal,
-                                    distance,
-                                    emit: None,
-                                    material: triangle.material.clone(),
-                                });
-                            } else {
-                                return None;
-                            }
+                            return Some(HitResult {
+                                position,
+                                normal,
+                                distance,
+                                emit: None,
+                                material: triangle.material.clone(),
+                            });
                         })
                     })
                     .fold(None, |acc, x| nearer_option_hitresult(acc, x));
@@ -305,6 +328,10 @@ impl RayTracer {
 fn nearer_option_hitresult(r1: Option<HitResult>, r2: Option<HitResult>) -> Option<HitResult> {
     match (&r1, &r2) {
         (Some(h1), Some(h2)) => {
+            if h1.distance < 0.00001 {
+                return r2;
+            }
+
             if h1.distance < h2.distance {
                 r1
             } else {
@@ -314,51 +341,3 @@ fn nearer_option_hitresult(r1: Option<HitResult>, r2: Option<HitResult>) -> Opti
         _ => r1.or(r2),
     }
 }
-
-/*
-fn F(wi: &Vector3, h: &Vector3, ni1: f32, ni2: f32) -> f32 {
-    fn r0(ni1: f32, ni2: f32) -> f32 {
-        ((ni1 - ni2) / (ni1 + ni2)).powi(2)
-    }
-    let r0 = r0(ni1, ni2);
-    r0 + (1.0 - r0) * (1.0 - wi.dot(h)).powi(5)
-}
-
-fn ggx(n: &Vector3, h: &Vector3, roughness: f32) -> f32 {
-    roughness.powi(2) / (PI * (n.dot(h).powi(2) * (roughness.powi(2) - 1.0) + 1.0).powi(2))
-}
-
-#[derive(Clone, Copy)]
-enum IlluminateType {
-    Direct,
-    IBL,
-}
-fn G(
-    wi: &Vector3,
-    wo: &Vector3,
-    h: &Vector3,
-    roughness: f32,
-    illuminate_type: IlluminateType,
-) -> f32 {
-    fn g_schlick_ggx(
-        n: &Vector3,
-        v: &Vector3,
-        roughness: f32,
-        illuminate_type: IlluminateType,
-    ) -> f32 {
-        fn k_direct(roughness: f32) -> f32 {
-            (roughness + 1.0).powi(2) / 8.0
-        }
-        fn k_ibl(roughness: f32) -> f32 {
-            roughness.powi(2) / 2.0
-        }
-        let k = match illuminate_type {
-            IlluminateType::Direct => k_direct(roughness),
-            IlluminateType::IBL => k_ibl(roughness),
-        };
-        n.dot(v) / (n.dot(v) * (1.0 - k) + k)
-    }
-    g_schlick_ggx(h, wi, roughness, illuminate_type)
-        * g_schlick_ggx(h, wo, roughness, illuminate_type)
-}
-*/

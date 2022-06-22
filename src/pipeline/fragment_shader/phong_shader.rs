@@ -58,27 +58,22 @@ impl FragmentShader for PhongShader {
         barycenter: (f32, f32, f32),
         _: f32,
     ) -> Color {
+        let material = model.material.as_ref().and_then(|m| m.phong_material());
+
+        let material = material.expect("Material invaild.");
+
         let kd = if let Some(texture) = &self.texture {
             let (u, v) = interpolate_uv!(triangle, texture_coordinate; barycenter);
             let color = texture.get(u, v);
             vector3([color.r as f32, color.g as f32, color.b as f32]) / 255.0
         } else {
-            model
-                .material
-                .as_ref()
-                .map_or(DEFAULT_KD, |m| m.diffuse_color.clone())
+            material.diffuse_color.clone()
             // interpolate!(triangle, color; barycenter)
         };
         let position = Vector3::from(&interpolate_triangle!(triangle, world_position; barycenter));
         let normal = Vector3::from(&interpolate!(triangle, normal; barycenter));
-        let ka = model
-            .material
-            .as_ref()
-            .map_or(DEFAULT_KA, |m| m.ambient_color.clone());
-        let ks = model
-            .material
-            .as_ref()
-            .map_or(DEFAULT_KS, |m| m.specular_color.clone());
+        let ka = material.ambient_color.clone();
+        let ks = material.specular_color.clone();
         let p = 150;
 
         let eye_positon = &self.eye_position;

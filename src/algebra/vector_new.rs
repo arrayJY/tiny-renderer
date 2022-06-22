@@ -45,11 +45,31 @@ impl<const N: usize> Vector<N> {
             .for_each(|(l, (&r1, &r2))| *l = r1 * r2);
         m
     }
+
+    pub fn clamp_max(self, v: f32) -> Self {
+        let mut m = Self::new();
+        m.data_iter_mut()
+            .zip(self.data_iter())
+            .for_each(|(l, x)| *l = x.min(v));
+        m
+    }
 }
 
 impl<const N: usize> Default for Vector<N> {
     fn default() -> Self {
         Self([f32::default(); N])
+    }
+}
+
+impl<const N: usize> From<f32> for Vector<N> {
+    fn from(v: f32) -> Self {
+        Self([v; N])
+    }
+}
+
+impl<const N: usize> From<&[f32; N]> for Vector<N> {
+    fn from(slice: &[f32; N]) -> Self {
+        Self(slice.clone())
     }
 }
 

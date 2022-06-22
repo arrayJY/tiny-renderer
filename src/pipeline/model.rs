@@ -1,9 +1,10 @@
 use crate::algebra::vector_new::{vector3, vector4, Vector3, Vector4};
+use crate::pipeline::material::{
+    MaterialNew, OptionEmissiveMaterial, PBRMaterial, PhongMaterial,
+};
 use crate::{interpolate, interpolate_triangle};
 use rand::prelude::SliceRandom;
 use rand::Rng;
-use std::convert::TryInto;
-use std::f32::consts::PI;
 use std::sync::Arc;
 use tobj;
 
@@ -15,94 +16,20 @@ pub struct Vertex {
     pub world_position: Vector4,
     pub normal: Option<Vector4>,
     pub texture_coordinate: Option<(f32, f32)>,
-    // pub color: Option<Color>,
-    // pub material: Option<Material>,
     pub w_reciprocal: Option<f32>,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum MaterialType {
-    Diffuse,
-}
-
-#[derive(Debug, Clone)]
-pub struct Material {
-    pub ambient_color: Vector3,  //Ka
-    pub diffuse_color: Vector3,  //Kd
-    pub specular_color: Vector3, //Ks
-    pub shininess: f32,          //Ns
-    pub optical_density: f32,    //Ni
-    pub dissolve: f32,           //d
-    pub emit: Option<Vector3>,
-    pub material_type: MaterialType,
-}
-
-impl Material {
-    pub fn eval(&self, _wi: &Vector3, wo: &Vector3, n: &Vector3) -> Vector3 {
-        match self.material_type {
-            MaterialType::Diffuse => {
-                let cos_alpha = n.dot(wo);
-                if cos_alpha > 0.0 {
-                    &self.diffuse_color / PI
-                } else {
-                    Vector3::new()
-                }
-            }
-        }
-    }
-
-    pub fn pdf(&self, _wi: &Vector3, _wo: &Vector3, _n: &Vector3) -> f32 {
-        match self.material_type {
-            MaterialType::Diffuse => {
-                // if wo.dot(n) > 0.0 {
-                0.5 / PI
-                // } else {
-                // 0.0
-                // }
-            }
-        }
-    }
-
-    pub fn sample(&self, _wi: &Vector3, n: &Vector3) -> Vector3 {
-        match self.material_type {
-            MaterialType::Diffuse => {
-                let mut rng = rand::thread_rng();
-                let x1 = rng.gen_range(0.0f32..1.0);
-                let x2 = rng.gen_range(0.0f32..1.0);
-                let z = (1.0 - 2.0 * x1).abs();
-                let r = (1.0 - z * z).sqrt();
-                let phi = 2.0 * PI * x2;
-                let locay_ray = vector3([r * phi.cos(), r * phi.sin(), z]);
-                Material::to_world(&locay_ray, n)
-            }
-        }
-    }
-
-    fn to_world(a: &Vector3, n: &Vector3) -> Vector3 {
-        let c = if n.x().abs() > n.y().abs() {
-            let inv_len = 1.0 / (n.x().powi(2) + n.z().powi(2)).sqrt();
-            vector3([n.z() * inv_len, 0.0, -n.x() * inv_len])
-        } else {
-            let inv_len = 1.0 / (n.y().powi(2) + n.z().powi(2)).sqrt();
-            vector3([0.0, n.z() * inv_len, -n.y() * inv_len])
-        };
-        let b = c.cross(n);
-
-        b * a.x() + c * a.y() + n * a.z()
-    }
 }
 
 #[derive(Debug, Clone)]
 pub struct Model {
     pub indices: Vec<[u32; 3]>,
     pub vertexs: Vec<Vertex>,
-    pub material: Option<Arc<Material>>,
+    pub material: Option<Arc<MaterialNew>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct TriangulatedModel {
     pub triangles: Vec<Triangle>,
-    pub material: Option<Arc<Material>>,
+    pub material: Option<Arc<MaterialNew>>,
     pub area: f32,
 }
 
@@ -110,7 +37,8 @@ impl TriangulatedModel {
     pub fn emit(&self) -> Option<Vector3> {
         self.material
             .as_ref()
-            .and_then(|material| material.emit.clone())
+            .and_then(|m| m.emissive_material())
+            .and_then(|m| Some(&m.base_color * m.intensity))
     }
     pub fn has_emit(&self) -> bool {
         self.emit().is_some()
@@ -130,7 +58,16 @@ impl TriangulatedModel {
             position,
             normal,
             distance: 0.0, //No use
-            emit: material.as_ref().and_then(|m| m.emit.clone()),
+            emit: material
+                .as_ref()
+                .and_then(|m| Some(m.as_ref()))
+                .and_then(|m| {
+                    if let MaterialNew::Emissive(m) = m {
+                        Some(&m.base_color * m.intensity)
+                    } else {
+                        None
+                    }
+                }),
             material,
         };
 
@@ -145,7 +82,7 @@ impl TriangulatedModel {
 #[derive(Debug, Clone)]
 pub struct Triangle {
     pub vertexs: Vec<Vertex>,
-    pub material: Option<Arc<Material>>,
+    pub material: Option<Arc<MaterialNew>>,
     pub area: f32,
 }
 
@@ -274,24 +211,9 @@ impl Model {
                     .collect();
 
                 let material = mesh.material_id.map_or(None, |id| {
-                    let m = &meterials[id];
-                    let ka = &m.ambient;
-                    let kd = &m.diffuse;
-                    let ks = &m.specular;
-                    let d = m.dissolve;
-                    let ns = m.shininess;
-                    let ni = m.optical_density;
-
-                    Some(Arc::new(Material {
-                        ambient_color: to_vector3f(ka),
-                        diffuse_color: to_vector3f(kd),
-                        specular_color: to_vector3f(ks),
-                        shininess: ns,
-                        optical_density: ni,
-                        dissolve: d,
-                        emit: emit_from_material(m),
-                        material_type: MaterialType::Diffuse,
-                    }))
+                    Some(Arc::new(MaterialNew::Phong(PhongMaterial::from(
+                        &meterials[id],
+                    ))))
                 });
                 Model {
                     indices,
@@ -318,12 +240,104 @@ impl Model {
     }
 }
 
-fn emit_from_material(material: &tobj::Material) -> Option<Vector3> {
-    material.unknown_param.get("emit").and_then(|emit| {
-        let emit = emit
-            .split(" ")
-            .map(|v| v.parse::<f32>().unwrap())
+impl Model {
+    pub fn from_gltf(path: &str) -> Vec<Self> {
+        use crate::algebra::matrix_new::Matrix4;
+        let (gltf, buffers, _) = gltf::import(path).unwrap();
+
+        // println!("transforms: {}", transforms.len());
+
+        let nodes = gltf.scenes().flat_map(|scene| scene.nodes()).map(|node| {
+            let attrs = node
+                .mesh()
+                .into_iter()
+                .flat_map(|mesh| mesh.primitives())
+                .enumerate()
+                .map(|(i, primitive)| {
+                    println!("{}", i);
+                    let material = primitive.material();
+                    let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+                    let indices = reader
+                        .read_indices()
+                        .expect("Indices no found.")
+                        .into_u32()
+                        // .map(|i| i as usize)
+                        .collect::<Vec<_>>();
+                    let indices = indices
+                        .chunks(3)
+                        .map(|c| [c[0], c[1], c[2]])
+                        .collect::<Vec<_>>();
+
+                    let positions = reader
+                        .read_positions()
+                        .expect("Positions not found.")
+                        .map(|p| Vector4::from(&vector3(p)))
+                        // .map(|p| transform * &p)
+                        .collect::<Vec<_>>();
+
+                    let normals = reader
+                        .read_normals()
+                        .expect("Normals not found.")
+                        .map(|n| Vector4::from(&vector3(n)))
+                        // .map(|n| transform * &n)
+                        .collect::<Vec<_>>();
+                    ((positions, normals, indices), material)
+                });
+            attrs
+        });
+
+        let transforms = gltf
+            .scenes()
+            .flat_map(|scene| scene.nodes())
+            .map(|node| Matrix4::from(node.transform().matrix()).transpose())
+            .cycle();
+
+        let models = nodes
+            .zip(transforms)
+            .flat_map(|(mesh_attr, transform)| {
+                let translation = Matrix4::translation_matrix(0.0, 0.0, -1.0);
+                println!("{:?}", transform);
+                println!("{:?}", translation);
+                let models = mesh_attr
+                    .map(|((positions, normals, indices), material)| {
+                        let positions = positions
+                            .iter()
+                            // .map(|p| vector4([p.x() + x, p.y() + y, p.z() + z, 1.0]))
+                            .map(|v| &transform * v)
+                            .collect::<Vec<_>>();
+
+                        let normals = normals
+                            .iter()
+                            .map(|n| &transform * n)
+                            .map(|v| v.normalized() )
+                            .collect::<Vec<_>>();
+
+                        let material = OptionEmissiveMaterial::from(&material).0.map_or_else(
+                            || MaterialNew::PBR(PBRMaterial::from(&material)),
+                            |m| MaterialNew::Emissive(m),
+                        );
+
+                        let vertexs = positions
+                            .into_iter()
+                            .zip(normals.into_iter())
+                            .map(|(position, normal)| Vertex {
+                                position: position.clone(),
+                                world_position: position.clone(),
+                                normal: Some(normal),
+                                texture_coordinate: None,
+                                w_reciprocal: None,
+                            })
+                            .collect::<Vec<_>>();
+                        Model {
+                            vertexs,
+                            indices,
+                            material: Some(Arc::new(material)),
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                models
+            })
             .collect::<Vec<_>>();
-        Some(vector3([emit[0], emit[1], emit[2]]))
-    })
+        models
+    }
 }

@@ -2,7 +2,7 @@
 name = "tiny-renderer"
 version = "0.1.0"
 authors = ["arrayJY <ji957455952@163.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -17,3 +17,7 @@ image = "0.23.13"
 minifb = "0.20"
 rand = "0.8.5"
 indicatif = "0.16.2"
+
+[dependencies.gltf]
+version = "1.0"
+features = ["extras", "names", "KHR_materials_specular", "KHR_lights_punctual", "KHR_materials_pbrSpecularGlossiness", "KHR_materials_ior"]

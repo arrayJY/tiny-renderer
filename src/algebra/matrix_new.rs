@@ -10,6 +10,14 @@ impl<const N: usize> Default for Matrix<N> {
     }
 }
 
+impl<const N: usize> From<[[f32; N]; N]> for Matrix<N> {
+    fn from(data: [[f32; N]; N]) -> Self {
+        Self(data)
+    }
+}
+
+
+
 impl<const N: usize, const M: usize> From<&Matrix<M>> for Matrix<N> {
     fn from(other: &Matrix<M>) -> Self {
         let mut m = Self::new();

@@ -9,8 +9,8 @@ use crate::{
         camera::Camera,
         fragment_shader::{make_shader, FragmentShader},
         light::Light,
-        model::{Material, Model},
-        model::{Triangle, TriangulatedModel, Vertex},
+        material::MaterialNew,
+        model::{Model, Triangle, TriangulatedModel, Vertex},
         rasterizer::Rasterizer,
         transformation::Transformation,
     },
@@ -378,7 +378,7 @@ fn complete_homogeneous_clip(model: &Model) -> Vec<Vertex> {
     new_vertexs
 }
 
-fn primitive_assembly(vertexs: Vec<Vertex>, material: &Option<Arc<Material>>) -> Vec<Triangle> {
+fn primitive_assembly(vertexs: Vec<Vertex>, material: &Option<Arc<MaterialNew>>) -> Vec<Triangle> {
     vertexs
         .chunks(3)
         .map(|vertexs| Triangle {
