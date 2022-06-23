@@ -174,8 +174,8 @@ pub fn triangulated_models_and_triangles(
         .map(|model| model.clone())
         .map(|mut model| {
             model.vertexs.iter_mut().for_each(|v| {
-                let scale = Matrix4::scale_matrix(scale, scale, scale);
-                v.position = &scale * &v.position;
+                // let scale = Matrix4::scale_matrix(scale, scale, scale);
+                // v.position = &scale * &v.position;
             });
             model
         })

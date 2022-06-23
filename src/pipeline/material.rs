@@ -116,7 +116,7 @@ impl PBRMaterial {
         r
     }
     fn normal_distribution(&self, n: &Vector3, h: &Vector3) -> f32 {
-        self.ggx(n, h).clamp(0.0, 1.0)
+        self.ggx(n, h)
     }
 
     fn geometry(&self, wi: &Vector3, wo: &Vector3, h: &Vector3, illum_type: IlluminateType) -> f32 {

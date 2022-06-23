@@ -200,7 +200,7 @@
                 1.0, 0.80624145, 0.64975286
             ],
             "extras" : {
-                "intensity" : 60.0
+                "intensity" : 3.0
             },
             "name" : "light.001",
             "pbrMetallicRoughness" : {

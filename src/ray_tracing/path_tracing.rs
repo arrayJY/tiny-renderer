@@ -12,6 +12,7 @@ use crate::{
 };
 use rand::Rng;
 use std::{f32::consts::PI, sync::Arc};
+use typenum::Pow;
 
 use super::bvh::{BVHNode, BVHTree, AABB};
 
@@ -28,7 +29,6 @@ pub struct RayTracer {
 }
 
 const ELISION: f32 = 0.001;
-
 
 impl RayTracer {
     pub fn new(
@@ -71,7 +71,7 @@ impl RayTracer {
 
         let dir = vector3([x, y, -1.0]).normalized();
         let origin_z = self.width as f32 * 1.7;
-        let origin = vector3([0.0, self.width as f32 / 2.0, origin_z]);
+        let origin = vector3([0.0, 1.0, 3.4]);
 
         Ray { origin, dir }
     }
@@ -186,31 +186,35 @@ impl RayTracer {
             let mut l_dir = Vector3::new();
             if let Some((inter, pdf_light)) = self.sample_light() {
                 let x = &inter.position;
-                let nn = &inter.normal;
-                let ws = &(x - p).normalized();
+                let light_n = &inter.normal;
+                let object_to_light_dir = &(x - p).normalized();
+                let light_to_object_dir = &(-object_to_light_dir);
 
-                let rray = Ray::new(p, &ws);
+                let rray = Ray::new(p, &object_to_light_dir);
 
                 if let Some(nearest_inter) = self.get_nearest_intersection(&rray) {
                     // Light not be blocked
-                    if (&nearest_inter.position - x).norm() < ELISION{
-                        let cos_theta0 = ws.dot(&n).abs();
-                        let cos_theta1 = (-ws).dot(&nn).abs();
-                        let fr = intersection.material_eval(&ws, &wo, n, IlluminateType::Direct);
+                    if (&nearest_inter.position - x).norm() < ELISION {
+                        let cos_theta0 = object_to_light_dir.dot(&n);
+                        let cos_theta1 = light_to_object_dir.dot(&light_n);
+                        let material = intersection.pbr_material();
+                        let fr =
+                            material.eval(&object_to_light_dir, &wo, n, IlluminateType::Direct);
                         if let Some(li) = inter.emit {
-                            if cos_theta0 * cos_theta0 > 0.0 {
-                                let per = fr * cos_theta0 * cos_theta1
-                                    / ((x - p).norm().powi(2) * pdf_light);
-                                // let per = per.clamp_max(1.0);
-                                l_dir = li.cwise_product(&per)
-                                // println!("{:?}", l_dir);
-                            }
+                            let pdf_light_sample = if cos_theta1 == 0.0 {
+                                0.0
+                            } else {
+                                nearest_inter.distance.powi(2) / pdf_light / cos_theta1.abs()
+                            };
+
+                            let pdf_bsdf = material.pdf(object_to_light_dir, &wo, n);
+                            let pdf = pdf_light_sample + pdf_bsdf;
+                            l_dir = li.cwise_product(&fr) * cos_theta0.abs() / pdf
                         }
                     }
                 }
             }
-
-            // Indirect light
+            // Indirect lighr
             let mut l_indir = Vector3::new();
             const P_RR: f32 = 0.9;
             let ksi = rand::thread_rng().gen_range(0.0..=1.0f32);
@@ -225,8 +229,10 @@ impl RayTracer {
                 let pdf_bsdf_denom = pdf_bsdf_denom / P_RR;
                 if pdf_bsdf > 0.0 {
                     let fr = fr * cos_theta * pdf_bsdf_denom;
-                    // let fr = fr.clamp_max(1.0);
-                    l_indir = self.shade(&ray, depth + 1).clamp_max(1.0).cwise_product(&fr);
+                    l_indir = self
+                        .shade(&ray, depth + 1)
+                        .clamp_max(10.0)
+                        .cwise_product(&fr);
                 }
             }
             let r = l_dir + l_indir;
