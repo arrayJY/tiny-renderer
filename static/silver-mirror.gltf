@@ -244,12 +244,12 @@
             "name" : "tallBox.001",
             "pbrMetallicRoughness" : {
                 "baseColorFactor" : [
-                    0.7250000238418579,
-                    0.7099999785423279,
-                    0.6800000071525574,
+                    0.97,
+                    0.96,
+                    0.91,
                     1
                 ],
-                "metallicFactor" : 0
+                "roughnessFactor" : 0
             }
         }
     ],

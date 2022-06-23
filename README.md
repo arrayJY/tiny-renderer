@@ -8,6 +8,7 @@ A toy software renderer for learning Computer Graphics written in Rust.
 - Depth testing
 - Phong shading
 - Orbital camera controls
+- Physicallly-Based-Rendering(Cook-Torrance)
 
 ## Usage
 Tiny renderer is available in **Windows, Linux and MacOSX** now.
@@ -27,8 +28,8 @@ Available shaders:
 - `phong-color`: Color shader with Phong shading.
 - `phong-texture`: Texture shader with Phong shading.
 
-`path` is the the path **without extension** to `.obj/.mtl` and texture image(`.jpg/.png`) file. 
-It means they should be in same directory.
+`path` is the the path **without extension** to `.gltf/.obj/.mtl` and texture image(`.jpg/.png`) file. 
+It means they should be in same directory. PBR will try to load `.gltf` and others will try to load `.obj`.
 
 For example, you can run just like:
 ```
@@ -59,8 +60,8 @@ Don't forget `--release` flag because of its poor performance.
 | ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_earth.gif) |   `cargo run --release texture static/earth`    |
 | ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_cube.gif) |       `cargo run --release z static/cube`       |
 | ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_spot.gif) | `cargo run --release phong-texture static/spot` |
-| ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_path_tracing.png) | `cargo run --release pbr static/cornell-box 512` |
-|                                                              |                                               |
+| ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_path_tracing1.png) | `cargo run --release pbr static/cornell-box 512` |
+| ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_path_tracing2.png) | `cargo run --release pbr static/silver-mirror 512` |
 
 
 ## License
