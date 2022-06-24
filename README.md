@@ -62,6 +62,7 @@ Don't forget `--release` flag because of its poor performance.
 | ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_spot.gif) | `cargo run --release phong-texture static/spot` |
 | ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_path_tracing1.png) | `cargo run --release pbr static/cornell-box 512` |
 | ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_path_tracing2.png) | `cargo run --release pbr static/silver-mirror 512` |
+| ![](https://raw.githubusercontent.com/arrayJY/tiny-renderer/master/static/screenshot_path_tracing3.png) | `cargo run --release pbr static/bunny 512` |
 
 
 ## License
