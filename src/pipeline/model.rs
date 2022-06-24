@@ -245,7 +245,6 @@ impl Model {
         use crate::algebra::matrix_new::Matrix4;
         let (gltf, buffers, _) = gltf::import(path).unwrap();
 
-        // println!("transforms: {}", transforms.len());
 
         let nodes = gltf.scenes().flat_map(|scene| scene.nodes()).map(|node| {
             let attrs = node
@@ -254,7 +253,6 @@ impl Model {
                 .flat_map(|mesh| mesh.primitives())
                 .enumerate()
                 .map(|(i, primitive)| {
-                    println!("{}", i);
                     let material = primitive.material();
                     let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
                     let indices = reader
@@ -296,8 +294,6 @@ impl Model {
             .zip(transforms)
             .flat_map(|(mesh_attr, transform)| {
                 let translation = Matrix4::translation_matrix(0.0, 0.0, -1.0);
-                println!("{:?}", transform);
-                println!("{:?}", translation);
                 let models = mesh_attr
                     .map(|((positions, normals, indices), material)| {
                         let positions = positions
