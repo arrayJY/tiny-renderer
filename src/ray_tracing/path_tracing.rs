@@ -38,8 +38,7 @@ impl RayTracer {
         objects: Vec<TriangulatedModel>,
         spp: usize,
     ) -> Self {
-        let objects_tree = BVHTree::new();
-        // let objects_tree = BVHTree::from_triangles(&triangles.as_slice());
+        let objects_tree = BVHTree::from_triangles(&triangles.as_slice());
         let bounding_boxes = objects
             .iter()
             .map(|model| AABB::from(&model.triangles[..]))
@@ -261,6 +260,11 @@ impl RayTracer {
     }
 
     fn get_nearest_intersection(&self, ray: &Ray) -> Option<HitResult> {
+        self._get_nearest_intersection(ray, &self.objects_tree.root)
+        // self.slow_get_nearest_intersection(ray)
+    }
+
+    fn slow_get_nearest_intersection(&self, ray: &Ray) -> Option<HitResult> {
         self.objects
             .iter()
             .flat_map(|t| t.triangles.iter())
@@ -271,8 +275,8 @@ impl RayTracer {
                     let normal =
                         Vector3::from(&interpolate!(triangle, normal; barycenter)).normalized();
                     let distance = (&position - &ray.origin).norm();
-                    let material = triangle.material.clone();
                     if distance > ELISION {
+                        let material = triangle.material.clone();
                         return Some(HitResult {
                             position,
                             normal,
@@ -288,7 +292,6 @@ impl RayTracer {
                 })
             })
             .fold(None, |acc, x| nearer_option_hitresult(acc, x))
-        // self._get_nearest_intersection(ray, &self.objects_tree.root)
     }
 
     fn _get_nearest_intersection(&self, ray: &Ray, node: &BVHNode) -> Option<HitResult> {
@@ -309,13 +312,17 @@ impl RayTracer {
                             let normal = Vector3::from(&interpolate!(triangle, normal; barycenter))
                                 .normalized();
                             let distance = (&position - &ray.origin).norm();
-                            if distance > 0.001 {
+                            if distance > ELISION {
+                                let material = triangle.material.clone();
                                 return Some(HitResult {
                                     position,
                                     normal,
                                     distance,
-                                    emit: None,
-                                    material: triangle.material.clone(),
+                                    emit: material.as_ref().and_then(|m| {
+                                        m.emissive_material()
+                                            .and_then(|e| Some(&e.base_color * e.intensity))
+                                    }),
+                                    material,
                                 });
                             } else {
                                 None
