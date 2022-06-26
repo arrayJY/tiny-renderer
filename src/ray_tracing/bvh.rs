@@ -1,3 +1,5 @@
+use std::iter::Sum;
+
 use crate::algebra::vector_new::Vector4;
 use crate::pipeline::model::Triangle;
 use crate::ray_tracing::ray::Ray;
@@ -92,8 +94,17 @@ impl AABB {
             (tz_min, tz_max)
         };
 
+        const EPSILON: f32 = f32::EPSILON * 10.0;
+        let tx_min = tx_min - EPSILON;
+        let ty_min = ty_min - EPSILON;
+        let tz_min = tz_min - EPSILON;
+        let tx_max = tx_max + EPSILON;
+        let ty_max = ty_max + EPSILON;
+        let tz_max = tz_max + EPSILON;
+
         let t_enter = tx_min.max(ty_min).max(tz_min);
         let t_exit = tx_max.min(ty_max).min(tz_max);
+        // println!("{}", t_enter - t_exit);
 
         t_enter < t_exit && t_exit > 0.0
         // let tx0 = self.x0 - s.x()
@@ -108,13 +119,34 @@ pub struct BVHNode {
     pub r: Option<Box<BVHNode>>,
 }
 
+impl BVHNode {
+    pub fn sum(&self) -> usize {
+        let mut s = self.data.as_ref().map_or(0, |t| t.len());
+        if let Some(l) = &self.l {
+            s += l.sum()
+        }
+        if let Some(r) = &self.r {
+            s += r.sum()
+        }
+        s
+    }
+}
+
 pub struct BVHTree {
     pub root: BVHNode,
 }
 
 impl BVHTree {
+    pub fn sum(&self) -> usize {
+        self.root.sum()
+    }
+}
+
+impl BVHTree {
     pub fn new() -> Self {
-        BVHTree { root: BVHNode::default() }
+        BVHTree {
+            root: BVHNode::default(),
+        }
     }
 
     pub fn from_triangles(triangles: &[Triangle]) -> Self {
