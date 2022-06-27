@@ -3,6 +3,7 @@ use core::f32;
 use crate::algebra::vector_new::vector3;
 use crate::Color;
 
+use super::fragment_shader::FragmentShaderPayload;
 use super::model::TriangulatedModel;
 use super::{fragment_shader::FragmentShader, model::Triangle};
 
@@ -114,7 +115,13 @@ impl Rasterizer {
                                 }
                                 let barycenter = z_buffer_item.barycenter.clone();
                                 let z = z_buffer_item.z;
-                                let color = shader.shade(model, triangle, barycenter, z);
+                                let payload = FragmentShaderPayload {
+                                    model,
+                                    triangle,
+                                    barycenter,
+                                    z,
+                                };
+                                let color = shader.shade(&payload);
                                 frame_buffer[index] = Some(color);
                             }
                         }

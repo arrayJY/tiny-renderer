@@ -12,14 +12,21 @@ pub mod z_shader;
 pub trait FragmentShader {
     fn shade(
         &self,
-        model: &TriangulatedModel,
-        triangle: &Triangle,
-        barycenter: (f32, f32, f32),
-        z: f32,
+        payload: &FragmentShaderPayload
     ) -> Color;
     fn update_camera(&mut self, camera: &Camera);
     fn update_light(&mut self, light: &Light);
 }
+
+
+#[derive(Debug, Clone)]
+pub struct FragmentShaderPayload<'a> {
+    pub model: &'a TriangulatedModel,
+    pub triangle: &'a Triangle,
+    pub barycenter: (f32, f32, f32),
+    pub z: f32,
+}
+
 
 pub use color_shader::ColorShader;
 pub use phong_shader::PhongShader;

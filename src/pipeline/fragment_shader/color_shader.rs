@@ -1,8 +1,7 @@
-use super::FragmentShader;
+use super::{FragmentShader, FragmentShaderPayload};
 use crate::algebra::vector_new::{vector3, Vector3};
-use crate::pipeline::material::{MaterialNew};
-use crate::pipeline::model::TriangulatedModel;
-use crate::pipeline::{camera::Camera, light::Light, model::Triangle};
+use crate::pipeline::material::MaterialNew;
+use crate::pipeline::{camera::Camera, light::Light};
 use crate::Color;
 
 pub struct ColorShader;
@@ -10,7 +9,12 @@ pub struct ColorShader;
 const DEFAULT_COLOR: Vector3 = vector3([127.0, 127.0, 127.0]);
 
 impl FragmentShader for ColorShader {
-    fn shade(&self, model: &TriangulatedModel, _: &Triangle, _: (f32, f32, f32), _: f32) -> Color {
+    fn shade(
+        &self,
+        FragmentShaderPayload {
+            model, ..
+        }: &FragmentShaderPayload,
+    ) -> Color {
         model
             .material
             .as_ref()

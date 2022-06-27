@@ -3,14 +3,13 @@ use crate::{
     pipeline::{
         camera::Camera,
         light::Light,
-        model::{Triangle, TriangulatedModel},
         texture::Texture,
     },
     renderer::Renderer,
     Color, *,
 };
 
-use super::FragmentShader;
+use super::{FragmentShader, FragmentShaderPayload};
 
 pub struct PhongShader {
     pub eye_position: Vector3,
@@ -53,12 +52,15 @@ const AMBIENT_INTENSITY: Vector3 = vector3([0.2, 0.2, 0.2]);
 impl FragmentShader for PhongShader {
     fn shade(
         &self,
-        model: &TriangulatedModel,
-        triangle: &Triangle,
-        barycenter: (f32, f32, f32),
-        _: f32,
+        FragmentShaderPayload {
+            model,
+            triangle,
+            barycenter,
+            ..
+        }: &FragmentShaderPayload,
     ) -> Color {
         let material = model.material.as_ref().and_then(|m| m.phong_material());
+        let barycenter = barycenter.clone();
 
         let kd = if let Some(texture) = &self.texture {
             let (u, v) = interpolate_uv!(triangle, texture_coordinate; barycenter);
