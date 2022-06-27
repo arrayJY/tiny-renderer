@@ -12,46 +12,114 @@ pub struct Rasterizer {
     pub models: Vec<TriangulatedModel>,
     pub width: usize,
     pub height: usize,
-    pub z_buffer: Vec<f32>,
+    pub z_buffer: Vec<ZBufferItem>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ZBufferItem {
+    pub z: f32,
+    pub model_index: usize,
+    pub triangle_index: usize,
+    pub barycenter: (f32, f32, f32),
+}
+
+impl Default for ZBufferItem {
+    fn default() -> Self {
+        Self {
+            z: f32::MAX,
+            model_index: 0,
+            triangle_index: 0,
+            barycenter: (0.0, 0.0, 0.0),
+        }
+    }
 }
 
 #[allow(dead_code)]
 impl Rasterizer {
     pub fn new(width: usize, height: usize, models: Vec<TriangulatedModel>) -> Self {
-        Self {
+        let mut rasterizer = Self {
             models,
             width,
             height,
-            z_buffer: vec![f32::MAX; width * height],
-        }
+            z_buffer: vec![ZBufferItem::default(); width * height],
+        };
+        rasterizer.update_z_buffer();
+        rasterizer
+    }
+
+    pub fn update_z_buffer(&mut self) {
+        let z_buffer = &mut self.z_buffer;
+        let z_buffer_size = z_buffer.len();
+
+        self.models
+            .iter()
+            .enumerate()
+            .for_each(|(model_index, model)| {
+                model
+                    .triangles
+                    .iter()
+                    .enumerate()
+                    .for_each(|(triangle_index, triangle)| {
+                        let (min_x, min_y, max_x, max_y) = Rasterizer::bounding_box(triangle);
+                        for x in min_x..max_x {
+                            for y in min_y..max_y {
+                                let barycenter =
+                                    Rasterizer::barycentric_2d(x as f32, y as f32, triangle);
+                                if Rasterizer::inside_triangle_by_barycenter(barycenter) {
+                                    let index = y * self.width + x;
+                                    let z = -Rasterizer::z_interpolation(triangle, barycenter);
+                                    let barycenter =
+                                        Rasterizer::perspective_correct(triangle, barycenter);
+                                    if index < z_buffer_size && z < z_buffer[index].z {
+                                        z_buffer[index] = ZBufferItem {
+                                            z,
+                                            model_index,
+                                            triangle_index,
+                                            barycenter,
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    });
+            });
     }
 
     pub fn rasterize(&mut self, shader: &Box<dyn FragmentShader>) -> Vec<Option<Color>> {
         let z_buffer = &mut self.z_buffer;
         let mut frame_buffer = vec![None; self.height * self.width];
-        let width = self.width;
+        let z_buffer_size = z_buffer.len();
 
-        self.models.iter().for_each(|model| {
-            model.triangles.iter().for_each(|triangle| {
-                let (min_x, min_y, max_x, max_y) = Rasterizer::bounding_box(triangle);
-                let coord_iter =
-                    (min_x..max_x).flat_map(move |a| (min_y..max_y).map(move |b| (a, b)));
-
-                coord_iter.for_each(|(x, y)| {
-                    let barycenter = Rasterizer::barycentric_2d(x as f32, y as f32, triangle);
-                    if Rasterizer::inside_triangle_by_barycenter(barycenter) {
-                        let index = y * width + x;
-                        let z = -Rasterizer::z_interpolation(triangle, barycenter);
-                        if z < z_buffer[index] {
-                            let barycenter = Rasterizer::perspective_correct(triangle, barycenter);
-                            let color = shader.shade(model, triangle, barycenter, z);
-                            frame_buffer[index] = Some(color);
-                            z_buffer[index] = z;
+        self.models
+            .iter()
+            .enumerate()
+            .for_each(|(model_index, model)| {
+                model
+                    .triangles
+                    .iter()
+                    .enumerate()
+                    .for_each(|(triangle_index, triangle)| {
+                        let (min_x, min_y, max_x, max_y) = Rasterizer::bounding_box(triangle);
+                        for x in min_x..max_x {
+                            for y in min_y..max_y {
+                                let index = y * self.width + x;
+                                if index >= z_buffer_size {
+                                    continue;
+                                }
+                                let z_buffer_item = &mut z_buffer[index];
+                                if z_buffer_item.model_index != model_index
+                                    || z_buffer_item.triangle_index != triangle_index
+                                {
+                                    continue;
+                                }
+                                let barycenter = z_buffer_item.barycenter.clone();
+                                let z = z_buffer_item.z;
+                                let color = shader.shade(model, triangle, barycenter, z);
+                                frame_buffer[index] = Some(color);
+                            }
                         }
-                    }
-                })
+                    });
             });
-        });
 
         frame_buffer
     }
