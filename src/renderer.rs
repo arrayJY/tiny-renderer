@@ -164,7 +164,7 @@ fn rotate_around_axis(v: &Vector3, axis: &Vector3, angle: f32) -> Vector3 {
 
 pub fn triangulated_models_and_triangles(
     models: &[Model],
-    scale: f32,
+    _scale: f32,
 ) -> (Vec<TriangulatedModel>, Vec<Triangle>) {
     let triangles_len = models.iter().map(|m| m.vertexs.len() / 3).sum();
     let mut result_triangles = Vec::<Triangle>::with_capacity(triangles_len);
@@ -173,7 +173,7 @@ pub fn triangulated_models_and_triangles(
         .iter()
         .map(|model| model.clone())
         .map(|mut model| {
-            model.vertexs.iter_mut().for_each(|v| {
+            model.vertexs.iter_mut().for_each(|_v| {
                 // let scale = Matrix4::scale_matrix(scale, scale, scale);
                 // v.position = &scale * &v.position;
             });

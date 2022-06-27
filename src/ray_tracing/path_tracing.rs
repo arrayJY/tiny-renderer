@@ -12,14 +12,12 @@ use crate::{
 };
 use rand::Rng;
 use std::{f32::consts::PI, sync::Arc};
-use typenum::Pow;
 
-use super::bvh::{BVHNode, BVHTree, AABB};
+use super::bvh::{BVHNode, BVHTree};
 
 pub struct RayTracer {
     pub objects_tree: BVHTree,
     pub objects: Vec<TriangulatedModel>,
-    pub bounding_boxes: Vec<AABB>,
     pub framebuffer: Vec<Vector3>,
     pub shaded_count: usize,
     pub width: usize,
@@ -39,14 +37,9 @@ impl RayTracer {
         spp: usize,
     ) -> Self {
         let objects_tree = BVHTree::from_triangles(&triangles.as_slice());
-        let bounding_boxes = objects
-            .iter()
-            .map(|model| AABB::from(&model.triangles[..]))
-            .collect::<Vec<_>>();
         let ray_tracer = Self {
             objects,
             objects_tree,
-            bounding_boxes,
             framebuffer: vec![Vector3::new(); width * height],
             shaded_count: 0,
             width,
@@ -69,7 +62,7 @@ impl RayTracer {
         let y = (1.0 - 2.0 * (y) / height) * scale;
 
         let dir = vector3([x, y, -1.0]).normalized();
-        let origin_z = self.width as f32 * 1.7;
+        // let origin_z = self.width as f32 * 1.7;
         let origin = vector3([0.0, 1.0, 3.4]);
 
         Ray { origin, dir }
@@ -264,7 +257,7 @@ impl RayTracer {
         // self.slow_get_nearest_intersection(ray)
     }
 
-    fn slow_get_nearest_intersection(&self, ray: &Ray) -> Option<HitResult> {
+    fn _slow_get_nearest_intersection(&self, ray: &Ray) -> Option<HitResult> {
         self.objects
             .iter()
             .flat_map(|t| t.triangles.iter())

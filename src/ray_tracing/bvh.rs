@@ -1,5 +1,3 @@
-use std::iter::Sum;
-
 use crate::algebra::vector_new::Vector4;
 use crate::pipeline::model::Triangle;
 use crate::ray_tracing::ray::Ray;

@@ -1,7 +1,5 @@
 use crate::algebra::vector_new::{vector3, vector4, Vector3, Vector4};
-use crate::pipeline::material::{
-    MaterialNew, OptionEmissiveMaterial, PBRMaterial, PhongMaterial,
-};
+use crate::pipeline::material::{MaterialNew, OptionEmissiveMaterial, PBRMaterial, PhongMaterial};
 use crate::{interpolate, interpolate_triangle};
 use rand::prelude::SliceRandom;
 use rand::Rng;
@@ -245,14 +243,12 @@ impl Model {
         use crate::algebra::matrix_new::Matrix4;
         let (gltf, buffers, _) = gltf::import(path).unwrap();
 
-
         let nodes = gltf.scenes().flat_map(|scene| scene.nodes()).map(|node| {
             let attrs = node
                 .mesh()
                 .into_iter()
                 .flat_map(|mesh| mesh.primitives())
-                .enumerate()
-                .map(|(i, primitive)| {
+                .map(|primitive| {
                     let material = primitive.material();
                     let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
                     let indices = reader
@@ -293,7 +289,6 @@ impl Model {
         let models = nodes
             .zip(transforms)
             .flat_map(|(mesh_attr, transform)| {
-                let translation = Matrix4::translation_matrix(0.0, 0.0, -1.0);
                 let models = mesh_attr
                     .map(|((positions, normals, indices), material)| {
                         let positions = positions
@@ -305,7 +300,7 @@ impl Model {
                         let normals = normals
                             .iter()
                             .map(|n| &transform * n)
-                            .map(|v| v.normalized() )
+                            .map(|v| v.normalized())
                             .collect::<Vec<_>>();
 
                         let material = OptionEmissiveMaterial::from(&material).0.map_or_else(
